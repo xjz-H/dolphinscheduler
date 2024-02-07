@@ -73,12 +73,16 @@ public class WorkflowExecuteContextFactory {
         // We use the database transaction in `handleCommand` so that we can guarantee the command will
         // always be executed
         // by only one master
+        //检查该命令是不是是不是符合该机器的槽位
         SlotCheckState slotCheckState = slotCheck(command);
+        //如果槽位发生改变或者master的机器数量重新统计发现发生了改变，就直接跑出异常
         if (slotCheckState.equals(SlotCheckState.CHANGE) || slotCheckState.equals(SlotCheckState.INJECT)) {
             log.info("Master handle command {} skip, slot check state: {}", command.getId(), slotCheckState);
             throw new RuntimeException("Slot check failed the current state: " + slotCheckState);
         }
+        //创建实例的时候传入机器的地址
         ProcessInstance processInstance = processService.handleCommand(masterConfig.getMasterAddress(), command);
+        //工具类
         ProcessInstanceMetrics
                 .recordProcessInstanceGenerateTime(System.currentTimeMillis() - commandTransformStartTime);
         return Optional.ofNullable(processInstance);

@@ -37,6 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/***
+ * 主机的槽位和主机个数管理器
+ */
 @Service
 @Slf4j
 public class MasterSlotManager {

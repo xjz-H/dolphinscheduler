@@ -37,7 +37,7 @@ registry:
 
 worker:
   # worker listener port
-  listen-port: 1234
+  listen-port: 8098
   # worker execute thread number to limit task instances in parallel
   exec-threads: 100
   # worker heartbeat interval
@@ -51,7 +51,8 @@ worker:
   # worker max cpuload avg, only higher than the system cpu load average, worker server can be dispatched tasks. default value 1: will use 100% cpu.
   max-cpu-load-avg: 1
   # worker reserved memory, only lower than system available memory, worker server can be dispatched tasks. default value 0.3, only the available memory is higher than 30%, worker server can receive task.
-  reserved-memory: 0.3
+  # junzexu修改改配置由03修改为0.1
+  reserved-memory: 0.1
   registry-disconnect-strategy:
     # The disconnect strategy: stop, waiting
     strategy: waiting
@@ -60,7 +61,7 @@ worker:
   task-execute-threads-full-policy: REJECT
 
 server:
-  port: 1235
+  port: 1236
 
 management:
   endpoints:

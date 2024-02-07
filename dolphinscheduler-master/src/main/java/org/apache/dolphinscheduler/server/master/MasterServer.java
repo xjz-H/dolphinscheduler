@@ -42,6 +42,9 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+/***
+ * master 启动类中包含扫描command的线程
+ */
 @SpringBootApplication
 @ComponentScan("org.apache.dolphinscheduler")
 @EnableTransactionManagement
@@ -74,6 +77,7 @@ public class MasterServer implements IStoppable {
     private MasterRpcServer masterRPCServer;
 
     public static void main(String[] args) {
+        //设置主线成的名字
         Thread.currentThread().setName(Constants.THREAD_NAME_MASTER_SERVER);
         SpringApplication.run(MasterServer.class);
     }
@@ -81,6 +85,7 @@ public class MasterServer implements IStoppable {
     /**
      * run master server
      */
+    // @PostConstruct 用来标记一个初始化方法，用于bean创建并完成依赖注入之后，执行初始化的方法，只能标注在无参和无返回值的方法上
     @PostConstruct
     public void run() throws SchedulerException {
         // init rpc server
@@ -92,7 +97,7 @@ public class MasterServer implements IStoppable {
         // self tolerant
         this.masterRegistryClient.start();
         this.masterRegistryClient.setRegistryStoppable(this);
-
+        // 扫描command命令，启用调度线程确保只有一个线程来启动调度器
         this.masterSchedulerBootstrap.start();
 
         this.eventExecuteService.start();

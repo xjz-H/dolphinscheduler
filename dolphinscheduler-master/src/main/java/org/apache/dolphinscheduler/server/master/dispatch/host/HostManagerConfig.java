@@ -26,11 +26,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * host manager config
+ * 主键管理配置类
  */
 @Configuration
 public class HostManagerConfig {
-
+    /**
+     * host manager config
+     */
     private AutowireCapableBeanFactory beanFactory;
 
     @Autowired
@@ -41,6 +43,10 @@ public class HostManagerConfig {
         this.beanFactory = beanFactory;
     }
 
+    /***
+     * 有些配置类是通过在配置类中的方法中注解添加到容器中的
+     * @return
+     */
     @Bean
     public HostManager hostManager() {
         HostSelector selector = masterConfig.getHostSelector();

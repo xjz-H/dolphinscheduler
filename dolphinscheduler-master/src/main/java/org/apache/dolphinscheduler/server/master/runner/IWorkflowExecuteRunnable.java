@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 public interface IWorkflowExecuteRunnable extends Callable<WorkflowStartStatus> {
     // todo: add control method to manage the workflow runnable e.g. pause/stop ....
 
+    //接口中可以有默认的方法来实现继承的接口
     @Override
     default WorkflowStartStatus call() {
         return startWorkflow();

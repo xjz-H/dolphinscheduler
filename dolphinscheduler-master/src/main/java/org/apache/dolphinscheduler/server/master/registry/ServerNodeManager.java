@@ -105,6 +105,14 @@ public class ServerNodeManager implements InitializingBean {
 
     private final List<MasterInfoChangeListener> masterInfoChangeListeners = new ArrayList<>();
 
+    /***
+     * bean生命周期
+     * 1、实例化bean
+     * 2、完成依赖注入
+     * 3、执行afterPropertiesSet 方法
+     * 4、执行@PostConstruct 注解的方法
+     */
+
     @Override
     public void afterPropertiesSet() {
 

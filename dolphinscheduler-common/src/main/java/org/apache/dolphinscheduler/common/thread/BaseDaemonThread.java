@@ -24,12 +24,14 @@ public abstract class BaseDaemonThread extends Thread {
 
     protected BaseDaemonThread(Runnable runnable) {
         super(runnable);
+        //把所有继承该类的线程都设置成了守护线程
         this.setDaemon(true);
     }
 
     protected BaseDaemonThread(String threadName) {
         super();
         this.setName(threadName);
+        //把所有继承该类的线程都设置成了守护线程
         this.setDaemon(true);
     }
 

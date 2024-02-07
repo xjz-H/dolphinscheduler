@@ -86,7 +86,7 @@ registry:
     digest: ~
 
 master:
-  listen-port: 5678
+  listen-port: 8086
   # master fetch command num
   fetch-command-num: 10
   # master prepare execute thread number to limit handle commands in parallel
@@ -107,7 +107,8 @@ master:
   # master max cpuload avg percentage, only higher than the system cpu load average, master server can schedule. default value 1: will use 100% cpu
   max-cpu-load-avg: 1
   # master reserved memory, only lower than system available memory, master server can schedule. default value 0.3, only the available memory is higher than 30%, master server can schedule.
-  reserved-memory: 0.3
+  # 徐君泽在此修改保留的内存阈值为0.1
+  reserved-memory: 0.1
   # failover interval, the unit is minute
   failover-interval: 10m
   # kill yarn / k8s application when failover taskInstance, default true
@@ -120,7 +121,7 @@ master:
   worker-group-refresh-interval: 10s
 
 server:
-  port: 5679
+  port: 5650
 
 management:
   endpoints:
@@ -154,7 +155,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/dolphinscheduler
     username: root
-    password: root
+    password: admin123
   quartz:
     properties:
       org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate

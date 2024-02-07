@@ -47,13 +47,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/**
- * Master scheduler thread, this thread will consume the commands from database and trigger processInstance executed.
+/***
+ * master 调度线程消费commands
  */
+
 @Service
 @Slf4j
 public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCloseable {
-
+    /**
+     * Master scheduler thread, this thread will consume the commands from database and trigger processInstance executed.
+     */
     @Autowired
     private CommandService commandService;
 
@@ -79,12 +82,14 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     private MasterTaskExecutorBootstrap masterTaskExecutorBootstrap;
 
     protected MasterSchedulerBootstrap() {
+        //调用父类的构造器，把该线程设置成守护线程，通过继承抽象类的方式来把线程设置成守护线程
         super("MasterCommandLoopThread");
     }
 
     @Override
     public synchronized void start() {
         log.info("MasterSchedulerBootstrap starting..");
+        //运行该线程的run 方法
         super.start();
         workflowEventLooper.start();
         masterTaskExecutorBootstrap.start();
@@ -109,6 +114,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     public void run() {
         while (!ServerLifeCycleManager.isStopped()) {
             try {
+                //如果服务不是运行状态需要休眠1s
                 if (!ServerLifeCycleManager.isRunning()) {
                     // the current server is not at running status, cannot consume command.
                     log.warn("The current server is not at running status, cannot consumes commands.");

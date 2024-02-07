@@ -449,6 +449,7 @@ public class ProcessServiceImpl implements ProcessService {
     public ProcessDefinition findProcessDefinition(Long processDefinitionCode, int version) {
         ProcessDefinition processDefinition = processDefineMapper.queryByCode(processDefinitionCode);
         if (processDefinition == null || processDefinition.getVersion() != version) {
+            //如果版本号不对再根据版本号去库中查询一下
             processDefinition = processDefineLogMapper.queryByDefinitionCodeAndVersion(processDefinitionCode, version);
             if (processDefinition != null) {
                 processDefinition.setId(0);
@@ -599,6 +600,7 @@ public class ProcessServiceImpl implements ProcessService {
         // the new process instance restart time is null.
         processInstance.setRestartTime(null);
         processInstance.setRunTimes(1);
+        //最大尝试次数默认为0
         processInstance.setMaxTryTimes(0);
         processInstance.setCommandParam(command.getCommandParam());
         processInstance.setCommandType(command.getCommandType());
@@ -758,9 +760,10 @@ public class ProcessServiceImpl implements ProcessService {
         ProcessInstance processInstance;
         ProcessDefinition processDefinition;
         CommandType commandType = command.getCommandType();
-
+       // 从数据库中查询过程的定义
         processDefinition =
                 this.findProcessDefinition(command.getProcessDefinitionCode(), command.getProcessDefinitionVersion());
+        // 如果过程定义没有找到直接跑出运行时异常
         if (processDefinition == null) {
             log.error("cannot find the work process define! define code : {}", command.getProcessDefinitionCode());
             throw new IllegalArgumentException("Cannot find the process definition for this workflowInstance");
@@ -769,10 +772,13 @@ public class ProcessServiceImpl implements ProcessService {
         if (cmdParam == null) {
             cmdParam = new HashMap<>();
         }
+
         int processInstanceId = command.getProcessInstanceId();
+        //如果该命令已经实例化了,创建新的实例
         if (processInstanceId == 0) {
             processInstance = generateNewProcessInstance(processDefinition, command, cmdParam);
         } else {
+            //命令已经实例化，需要去库中查询出对应的实例信息
             processInstance = this.findProcessInstanceDetailById(processInstanceId).orElse(null);
             setGlobalParamIfCommanded(processDefinition, cmdParam);
             if (processInstance == null) {

@@ -37,6 +37,9 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import org.springframework.validation.annotation.Validated;
 
+/***
+ * master 的配置类，读取mater 前缀的配置
+ */
 @Data
 @Validated
 @Configuration

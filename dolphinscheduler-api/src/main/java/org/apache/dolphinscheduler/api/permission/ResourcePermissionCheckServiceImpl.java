@@ -86,6 +86,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+
+
 @Component
 public class ResourcePermissionCheckServiceImpl
         implements
@@ -94,10 +96,12 @@ public class ResourcePermissionCheckServiceImpl
 
     @Autowired
     private ProcessService processService;
-
+   //值得学习的使用静态的final 的ConcurrentHashMap来存放所有初始化好的实现了ResourceAcquisitionAndPermissionCheck接口的bean
     public static final Map<AuthorizationType, ResourceAcquisitionAndPermissionCheck<?>> RESOURCE_LIST_MAP =
             new ConcurrentHashMap<>();
 
+    //巧妙的地方是通过bean实现ApplicationContextAware来完成RESOURCE_LIST_MAP的初始化，实现了ApplicationContextAware 接口的bean，
+    //会在bean创建过程中，检查如果bean有实现ApplicationContextAware 接口，会调用setApplicationContext 方法
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         for (ResourceAcquisitionAndPermissionCheck<?> authorizedResourceList : applicationContext
@@ -122,18 +126,22 @@ public class ResourcePermissionCheckServiceImpl
         return true;
     }
 
+   //用户操作权限检查。1、首先检查该用户是否存在，2、其次检查该用户是否是admin用户，admin用户拥有所有的操作权限 3、
     @Override
     public boolean operationPermissionCheck(Object authorizationType, Integer userId,
                                             String permissionKey, Logger logger) {
+        //如果用户没有注册过，直接返回false检查不通过
         User user = processService.getUserById(userId);
         if (user == null) {
             logger.error("User does not exist, userId:{}.", userId);
             return false;
         }
+        //用户类型是admin,admin类型的用户当然具有操作的权限
         if (user.getUserType().equals(UserType.ADMIN_USER)) {
             return true;
         }
-        return RESOURCE_LIST_MAP.get(authorizationType).permissionCheck(userId, permissionKey, logger);
+        //创建项目的操作是PROJECTS,permissionKey是project:create
+       return RESOURCE_LIST_MAP.get(authorizationType).permissionCheck(userId, permissionKey, logger);
     }
 
     @Override
@@ -205,7 +213,7 @@ public class ResourcePermissionCheckServiceImpl
             // all users can create projects
             return true;
         }
-
+        //获取用户所有的项目资源
         @Override
         public Set<Integer> listAuthorizedResourceIds(int userId, Logger logger) {
             return projectMapper.listAuthorizedProjects(userId, null).stream().map(Project::getId).collect(toSet());
@@ -527,6 +535,7 @@ public class ResourcePermissionCheckServiceImpl
         }
     }
 
+   //定义一个泛型接口
     interface ResourceAcquisitionAndPermissionCheck<T> {
 
         /**

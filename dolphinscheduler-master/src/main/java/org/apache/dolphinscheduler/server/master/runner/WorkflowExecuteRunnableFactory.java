@@ -72,6 +72,12 @@ public class WorkflowExecuteRunnableFactory {
     @Autowired
     private WorkflowExecuteContextFactory workflowExecuteContextFactory;
 
+    /***
+     *
+     *   Function<? super T, ? extends U> mapper
+     *   在 Function<? super T, ? extends U> mapper 的上下文中，
+     *   这意味着这个函数可以接受T类型或其父类型的参数，并返回U类型或其子类型的结果。
+     */
     public Optional<WorkflowExecuteRunnable> createWorkflowExecuteRunnable(Command command) throws WorkflowCreateException {
         try {
             Optional<IWorkflowExecuteContext> workflowExecuteRunnableContextOptional =

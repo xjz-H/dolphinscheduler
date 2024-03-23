@@ -298,6 +298,7 @@ public class ProcessServiceImpl implements ProcessService {
 
     @Autowired
     private TriggerRelationService triggerRelationService;
+
     /**
      * todo: split this method
      * handle Command (construct ProcessInstance from Command) , wrapped in transaction
@@ -306,10 +307,12 @@ public class ProcessServiceImpl implements ProcessService {
      * @param command found command
      * @return process instance
      */
+    //消费command 可以使用handle 来命名
     @Override
     @Transactional
     public @Nullable ProcessInstance handleCommand(String host,
                                                    Command command) throws CronParseException, CodeGenerateException {
+        //根据命令参数和工作流定义来创建一个实例
         ProcessInstance processInstance = constructProcessInstance(command, host);
         // cannot construct process instance, return null
         if (processInstance == null) {
@@ -335,8 +338,10 @@ public class ProcessServiceImpl implements ProcessService {
         } else {
             processInstanceDao.upsertProcessInstance(processInstance);
         }
+        //q:作用？ ans: 保证数据的一致性
         triggerRelationService.saveProcessInstanceTrigger(command.getId(), processInstance.getId());
         setSubProcessParam(processInstance);
+        //这里创建了是就会把command删除
         deleteCommandWithCheck(command.getId());
         return processInstance;
     }
@@ -687,13 +692,13 @@ public class ProcessServiceImpl implements ProcessService {
 
     /**
      * Get workflow runtime tenant
-     *
+     * <p>
      * the workflow provides a tenant and uses the provided tenant;
      * when no tenant is provided or the provided tenant is the default tenant, \
      * the user's tenant created by the workflow is used
      *
      * @param tenantCode tenantCode
-     * @param userId   userId
+     * @param userId     userId
      * @return tenant code
      */
     @Override
@@ -754,13 +759,14 @@ public class ProcessServiceImpl implements ProcessService {
      * @param host    host
      * @return process instance
      */
+
     @Override
     public @Nullable ProcessInstance constructProcessInstance(Command command,
                                                               String host) throws CronParseException, CodeGenerateException {
         ProcessInstance processInstance;
         ProcessDefinition processDefinition;
         CommandType commandType = command.getCommandType();
-       // 从数据库中查询过程的定义
+        //查询工作流定义
         processDefinition =
                 this.findProcessDefinition(command.getProcessDefinitionCode(), command.getProcessDefinitionVersion());
         // 如果过程定义没有找到直接跑出运行时异常
@@ -769,6 +775,7 @@ public class ProcessServiceImpl implements ProcessService {
             throw new IllegalArgumentException("Cannot find the process definition for this workflowInstance");
         }
         Map<String, String> cmdParam = JSONUtils.toMap(command.getCommandParam());
+        // 这里也是解决空指针异常的一个意识
         if (cmdParam == null) {
             cmdParam = new HashMap<>();
         }
@@ -776,11 +783,13 @@ public class ProcessServiceImpl implements ProcessService {
         int processInstanceId = command.getProcessInstanceId();
         //如果该命令已经实例化了,创建新的实例
         if (processInstanceId == 0) {
+            //根据工作流定义和命令创建一个新的工作流实例
             processInstance = generateNewProcessInstance(processDefinition, command, cmdParam);
         } else {
             //命令已经实例化，需要去库中查询出对应的实例信息
             processInstance = this.findProcessInstanceDetailById(processInstanceId).orElse(null);
             setGlobalParamIfCommanded(processDefinition, cmdParam);
+            // 如果返回null， 需要在注解中加以提示
             if (processInstance == null) {
                 return null;
             }
@@ -2144,6 +2153,7 @@ public class ProcessServiceImpl implements ProcessService {
     public DAG<Long, TaskNode, TaskNodeRelation> genDagGraph(ProcessDefinition processDefinition) {
         List<ProcessTaskRelation> taskRelations =
                 this.findRelationByCode(processDefinition.getCode(), processDefinition.getVersion());
+        //TaskNode 对象封装了DAG的任务节点信息 ，并记录了该任务的所有前置节点
         List<TaskNode> taskNodeList = transformTask(taskRelations, Lists.newArrayList());
         ProcessDag processDag = DagHelper.getProcessDag(taskNodeList, new ArrayList<>(taskRelations));
         // Generate concrete Dag to be executed
@@ -2194,25 +2204,50 @@ public class ProcessServiceImpl implements ProcessService {
     @Override
     public List<TaskNode> transformTask(List<ProcessTaskRelation> taskRelationList,
                                         List<TaskDefinitionLog> taskDefinitionLogs) {
+        //taskCodeMap key是所有的后置taskCode，value是所有的前置taskCode
+        //通过遍历DAG的边来获取这个Map
         Map<Long, List<Long>> taskCodeMap = new HashMap<>();
+        //q: for 循环在做什么？ a: 生成一个taskCodeMap，key为后置taskCode，value为前置taskCode
         for (ProcessTaskRelation processTaskRelation : taskRelationList) {
+            /***
+             * q: BiFunction<? super K, ? super V, ? extends V> remappingFunction
+             * a:BiFunction<? super K, ? super V, ? extends V>
+             *     remappingFunction 是 Java 中的一个函数式接口，它接受两个输入参数并产生一个结果。
+             *     在这个特定的上下文中，它被用于 Map 的 compute 方法。  这个 BiFunction 的作用是定义了如何重新计算 Map 中的值。
+             *     它接受两个参数，第一个参数是 Map 中的键（K），第二个参数是该键对应的值（V）。
+             *     它返回一个新的值，这个新的值将替换原来的值。
+             *     例如，如果你有一个 Map，你想要更新 Map 中的某个键对应的值，你可以使用这个 BiFunction 来定义如何根据原来的键和值来计算新的值。
+             */
+            /***
+             * 学习：BiFunction<? super K, ? super V, ? extends V> remappingFunction
+             * 1. 该接口是一个函数式接口，接受两个参数，返回一个值
+             * 2、第一个参数？是一个通配符表示我不关心具体的类型，只要是K或者K的父类就可以
+             * 3、第二个参数？是一个通配符表示我不关心具体的类型，只要是V或者V的父类就可以
+             * 4、第三个是一个返回值参数，？是一个通配符，我不关心具体类型，只要是V或者V的子类就可以
+             */
             taskCodeMap.compute(processTaskRelation.getPostTaskCode(), (k, v) -> {
                 if (v == null) {
                     v = new ArrayList<>();
                 }
+                // 入过边processTaskRelation 对应的没有前置taskCode，就不添加。
                 if (processTaskRelation.getPreTaskCode() != 0L) {
                     v.add(processTaskRelation.getPreTaskCode());
                 }
                 return v;
             });
         }
+        //如果第一次没有查询出来再查询一次
         if (CollectionUtils.isEmpty(taskDefinitionLogs)) {
             taskDefinitionLogs = taskDefinitionLogDao.queryTaskDefineLogList(taskRelationList);
         }
+        //任务定义的map，key是taskCode，value是TaskDefinitionLog
         Map<Long, TaskDefinitionLog> taskDefinitionLogMap = taskDefinitionLogs.stream()
                 .collect(Collectors.toMap(TaskDefinitionLog::getCode, taskDefinitionLog -> taskDefinitionLog));
+        //TaskNode 记录了该任务节点的所有前置节点
         List<TaskNode> taskNodeList = new ArrayList<>();
+        //使用entrySet()方法遍历map 是一个比较好的习惯
         for (Entry<Long, List<Long>> code : taskCodeMap.entrySet()) {
+            //获取taskCode对应的TaskDefinitionLog
             TaskDefinitionLog taskDefinitionLog = taskDefinitionLogMap.get(code.getKey());
             if (taskDefinitionLog != null) {
                 TaskNode taskNode = new TaskNode();
@@ -2221,6 +2256,8 @@ public class ProcessServiceImpl implements ProcessService {
                 taskNode.setName(taskDefinitionLog.getName());
                 taskNode.setDesc(taskDefinitionLog.getDescription());
                 taskNode.setType(taskDefinitionLog.getTaskType().toUpperCase());
+                //设置任务的运行标志，如果是YES，就是正常运行，如果是NO，就是禁止运行
+                //值得注意的是枚举是单例，可以直接使用 == 来比较是否相等
                 taskNode.setRunFlag(taskDefinitionLog.getFlag() == Flag.YES ? Constants.FLOWNODE_RUN_FLAG_NORMAL
                         : Constants.FLOWNODE_RUN_FLAG_FORBIDDEN);
                 taskNode.setMaxRetryTimes(taskDefinitionLog.getFailRetryTimes());
@@ -2240,6 +2277,7 @@ public class ProcessServiceImpl implements ProcessService {
                                 taskDefinitionLog.getTimeoutNotifyStrategy(),
                                 taskDefinitionLog.getTimeout())));
                 taskNode.setDelayTime(taskDefinitionLog.getDelayTime());
+                //设置该任务的所有前置节点，前置节点是一个List<String>，存储的是前置节点的taskCode，序列化为一个json字符串
                 taskNode.setPreTasks(JSONUtils.toJsonString(code.getValue().stream().map(taskDefinitionLogMap::get)
                         .map(TaskDefinition::getCode).collect(Collectors.toList())));
                 taskNode.setTaskGroupId(taskDefinitionLog.getTaskGroupId());
@@ -2471,9 +2509,9 @@ public class ProcessServiceImpl implements ProcessService {
                 }
             } while (thisTaskGroupQueue.getForceStart() == Flag.NO.getCode()
                     && taskGroupMapper.releaseTaskGroupResource(taskGroup.getId(),
-                            taskGroup.getUseSize(),
-                            thisTaskGroupQueue.getId(),
-                            TaskGroupQueueStatus.ACQUIRE_SUCCESS.getCode()) != 1);
+                    taskGroup.getUseSize(),
+                    thisTaskGroupQueue.getId(),
+                    TaskGroupQueueStatus.ACQUIRE_SUCCESS.getCode()) != 1);
         } catch (Exception e) {
             log.error("release the task group error", e);
             return null;
@@ -2561,9 +2599,10 @@ public class ProcessServiceImpl implements ProcessService {
     public ProcessInstance loadNextProcess4Serial(long code, int state, int id) {
         return this.processInstanceMapper.loadNextProcess4Serial(code, state, id);
     }
-
+   // 删除失败直接抛出异常
     protected void deleteCommandWithCheck(int commandId) {
         int delete = this.commandMapper.deleteById(commandId);
+        //这里删除数据失败直接抛出异常，整个事务回滚，保证了数据的一致性，一个command 只能被实例化一次
         if (delete != 1) {
             throw new ServiceException("delete command fail, id:" + commandId);
         }

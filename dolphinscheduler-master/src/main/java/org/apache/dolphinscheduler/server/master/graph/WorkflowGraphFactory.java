@@ -63,26 +63,33 @@ public class WorkflowGraphFactory {
 
     @Autowired
     private TaskDefinitionLogDao taskDefinitionLogDao;
-
+   //根据工作流实例创建工作流图
     public IWorkflowGraph createWorkflowGraph(ProcessInstance workflowInstance) throws Exception {
-
+        //ProcessTaskRelation 描述的是DAG的边，根据工作流的code和版本号来查询
         List<ProcessTaskRelation> processTaskRelations =
                 processService.findRelationByCode(workflowInstance.getProcessDefinitionCode(),
                         workflowInstance.getProcessDefinitionVersion());
+        //根据中间表查询出任务定义的日志。只需要查询是ProcessTaskRelation代表的边的后置任务
         List<TaskDefinitionLog> taskDefinitionLogs =
                 taskDefinitionLogDao.queryTaskDefineLogList(processTaskRelations);
+        //切分DAG图返回的任务节点，并TaskNode 记录了该任务的所有前置节点
         List<TaskNode> taskNodeList = processService.transformTask(processTaskRelations, taskDefinitionLogs);
 
         // generate process to get DAG info
+        //获取恢复任务的节点代码列表
+        // q: 恢复任务的节点是个什么业务背景？ a: 恢复任务是指在任务失败后，重新执行任务
+        //可以通过工作流中传入需要恢复的任务id列表来获取恢复任务的节点代码列表
         List<Long> recoveryTaskNodeCodeList = getRecoveryTaskNodeCodeList(workflowInstance.getCommandParam());
+       //解析命令参数生成开始节点代码列表
         List<Long> startNodeNameList = parseStartNodeName(workflowInstance.getCommandParam());
+        //taskNodeList： DAG图解析出的任务节点列表和边的关系
         ProcessDag processDag = DagHelper.generateFlowDag(taskNodeList, startNodeNameList, recoveryTaskNodeCodeList,
                 workflowInstance.getTaskDependType());
         if (processDag == null) {
             log.error("ProcessDag is null");
             throw new IllegalArgumentException("Create WorkflowGraph failed, ProcessDag is null");
         }
-        // generate process dag
+
         DAG<Long, TaskNode, TaskNodeRelation> dagGraph = DagHelper.buildDagGraph(processDag);
         log.debug("Build dag success, dag: {}", dagGraph);
 
@@ -95,6 +102,12 @@ public class WorkflowGraphFactory {
      *
      * @return recovery node code list
      */
+    /***
+     * 从解析命令参数生成开始节点代码列表；
+     * @param cmdParam
+     * @return
+     */
+    //
     private List<Long> getRecoveryTaskNodeCodeList(String cmdParam) {
         Map<String, String> paramMap = JSONUtils.toMap(cmdParam);
 

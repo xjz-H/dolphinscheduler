@@ -37,7 +37,7 @@ public class CodeGenerateUtils {
     }
 
     private static CodeGenerateUtils instance = null;
-
+    //创建一个单例的实例，直接加synchronized
     public static synchronized CodeGenerateUtils getInstance() throws CodeGenerateException {
         if (instance == null) {
             instance = new CodeGenerateUtils();

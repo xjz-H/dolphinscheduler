@@ -245,7 +245,7 @@ public class ExecutorServiceImpl extends BaseServiceImpl implements ExecutorServ
             putMsg(result, Status.TASK_PARALLELISM_PARAMS_ERROR);
             return result;
         }
-
+        //检查租户是否有效
         checkValidTenant(tenantCode);
         ProcessDefinition processDefinition;
         if (null != version) {

@@ -43,6 +43,7 @@ public class TriggerRelationServiceImpl implements TriggerRelationService {
         triggerRelation.setTriggerCode(triggerCode);
         triggerRelation.setCreateTime(new Date());
         triggerRelation.setUpdateTime(new Date());
+        //q:t_ds_trigger_relation 这个表的作用 ans:这个表是用来记录任务之间的触发关系的，比如任务A触发任务B，任务B触发任务C，这样的关系
         triggerRelationMapper.upsert(triggerRelation);
     }
     @Override

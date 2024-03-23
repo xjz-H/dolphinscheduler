@@ -17,6 +17,7 @@
 
 package org.apache.dolphinscheduler.server.master.exception;
 
+// 这个类是master的异常类 ，这也是一个值得学习的地方，为master来专门的第一个一个异常类
 public class MasterException extends Exception {
 
     public MasterException(String message) {

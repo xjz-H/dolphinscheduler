@@ -22,6 +22,8 @@ import org.apache.dolphinscheduler.service.model.TaskNode;
 
 import java.util.List;
 
+//工作流的有向无环图对象
+//由边和节点组成。边：由开始节点和结束节点组成。节点：由任务节点组成。
 public class ProcessDag {
 
     /**

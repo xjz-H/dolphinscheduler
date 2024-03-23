@@ -66,17 +66,21 @@ public class TaskDefinitionLogDaoImpl extends BaseDao<TaskDefinitionLog, TaskDef
 
     @Override
     public List<TaskDefinitionLog> queryTaskDefineLogList(List<ProcessTaskRelation> processTaskRelations) {
+        // 先对集合判空操作
         if (CollectionUtils.isEmpty(processTaskRelations)) {
             return Collections.emptyList();
         }
+        // 过滤出后置任务，也就过滤出了所有的任务定义
         Set<TaskDefinition> taskDefinitionSet = processTaskRelations.stream()
                 .filter(p -> p.getPostTaskCode() > 0)
                 .map(p -> new TaskDefinition(p.getPostTaskCode(), p.getPostTaskVersion()))
                 .collect(Collectors.toSet());
-
+        // 如果后置任务集合为空，返回空集合
         if (CollectionUtils.isEmpty(taskDefinitionSet)) {
             return Collections.emptyList();
         }
+        //q: t_ds_task_definition_log 该表在海豚调度器中的作用？ a: 该表用于记录任务定义的日志
+        //q: 为什么不直接查询t_ds_task_definition表 而查询t_ds_task_definition_log表？ a: 该表用于记录任务定义的日志
         return mybatisMapper.queryByTaskDefinitions(taskDefinitionSet);
     }
 

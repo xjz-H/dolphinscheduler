@@ -98,6 +98,7 @@ public class MasterServer implements IStoppable {
         this.masterRegistryClient.start();
         this.masterRegistryClient.setRegistryStoppable(this);
         // 扫描command命令，启用调度线程确保只有一个线程来启动调度器
+        // start master scheduler
         this.masterSchedulerBootstrap.start();
 
         this.eventExecuteService.start();

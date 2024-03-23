@@ -42,7 +42,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DAG<Node, NodeInfo, EdgeInfo> {
-
+    /***
+     *  可以重入的读写锁，读写锁的实现
+     *  1、获取写锁，读写锁的状态是写锁，其他线程不能获取读锁或写锁
+     *  2、获取读锁，读写锁的状态是读锁，其他线程可以获取读锁，但不能获取写锁
+     */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
@@ -72,6 +76,7 @@ public class DAG<Node, NodeInfo, EdgeInfo> {
      * @param node node
      * @param nodeInfo node information
      */
+    //这里值得学习的是标准的读写锁的使用方式
     public void addNode(Node node, NodeInfo nodeInfo) {
         lock.writeLock().lock();
 

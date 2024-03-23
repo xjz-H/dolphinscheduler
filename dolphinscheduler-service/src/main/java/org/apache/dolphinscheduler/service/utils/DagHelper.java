@@ -44,6 +44,11 @@ import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 
+
+/***
+ *  helper类和utils类都是工具类，但是helper类是在某个类中使用的工具类，而utils类是独立的工具类，但是都可以将其放在utils包下
+ */
+
 /**
  * dag tools
  */
@@ -88,7 +93,7 @@ public class DagHelper {
                                                                  TaskDependType taskDependType) {
         List<TaskNode> destFlowNodeList = new ArrayList<>();
         List<Long> startNodeList = startNodeNameList;
-
+        //从哪些节点开始执行，并运行依赖这些开始节点的所有节点
         if (taskDependType != TaskDependType.TASK_POST && CollectionUtils.isEmpty(startNodeList)) {
             log.error("start node list is empty! cannot continue run the process ");
             return destFlowNodeList;
@@ -215,12 +220,13 @@ public class DagHelper {
                                              List<Long> startNodeNameList,
                                              List<Long> recoveryNodeCodeList,
                                              TaskDependType depNodeType) throws Exception {
-
+        // generate process to get DAG info
         List<TaskNode> destTaskNodeList = generateFlowNodeListByStartNode(totalTaskNodeList, startNodeNameList,
                 recoveryNodeCodeList, depNodeType);
         if (destTaskNodeList.isEmpty()) {
             return null;
         }
+        // generate process dag
         List<TaskNodeRelation> taskNodeRelations = generateRelationListByFlowNodes(destTaskNodeList);
         ProcessDag processDag = new ProcessDag();
         processDag.setEdges(taskNodeRelations);
@@ -566,7 +572,7 @@ public class DagHelper {
         taskNodeList.forEach(taskNode -> {
             taskNodeMap.putIfAbsent(taskNode.getCode(), taskNode);
         });
-
+        //收集有向无环图的所有边对象
         List<TaskNodeRelation> taskNodeRelations = new ArrayList<>();
         for (ProcessTaskRelation processTaskRelation : processTaskRelations) {
             long preTaskCode = processTaskRelation.getPreTaskCode();

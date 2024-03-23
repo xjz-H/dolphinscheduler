@@ -109,9 +109,11 @@ public class CommandServiceImpl implements CommandService {
 
     @Override
     public List<Command> findCommandPageBySlot(int pageSize, int masterCount, int thisMasterSlot) {
+        // 中文注释：如果masterCount小于等于0，返回空列表
         if (masterCount <= 0) {
             return Lists.newArrayList();
         }
+        // 中文注释：查询命令分页
         return commandMapper.queryCommandPageBySlot(pageSize, masterCount, thisMasterSlot);
     }
 

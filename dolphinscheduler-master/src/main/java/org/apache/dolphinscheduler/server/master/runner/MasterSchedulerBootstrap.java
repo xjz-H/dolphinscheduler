@@ -51,6 +51,9 @@ import org.springframework.stereotype.Service;
  * master 调度线程消费commands
  */
 
+/***
+ * q  继承AutoCloseable 接口有什么好处？  通过实现AutoCloseable 接口，可以在try-with-resources 语句中使用
+ */
 @Service
 @Slf4j
 public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCloseable {
@@ -83,6 +86,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
 
     protected MasterSchedulerBootstrap() {
         //调用父类的构造器，把该线程设置成守护线程，通过继承抽象类的方式来把线程设置成守护线程
+        // 这也是一个值得学习的地方，调用父类的构造器，这样子类就拥有了继承过来的父类的属性了
         super("MasterCommandLoopThread");
     }
 
@@ -90,12 +94,13 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     public synchronized void start() {
         log.info("MasterSchedulerBootstrap starting..");
         //运行该线程的run 方法
+        //  这也是一个值得学习的地方，通过调用父类的start 方法，来启动线程，这样才会真正的运行run 方法
         super.start();
         workflowEventLooper.start();
         masterTaskExecutorBootstrap.start();
         log.info("MasterSchedulerBootstrap started...");
     }
-
+    // q:  实现了AutoCloseable 接口的close 方法有什么作用？   通过实现AutoCloseable 接口，可以在try-with-resources 语句中使用
     @Override
     public void close() throws Exception {
         log.info("MasterSchedulerBootstrap stopping...");
@@ -109,6 +114,19 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
 
     /**
      * run of MasterSchedulerService
+     */
+    /***
+     * 1. 从数据库中获取command
+     * 2. 判断当前服务是否处于运行状态，如果不是则休眠1s
+     * 3. 判断当前服务是否处于过载状态，如果是则休眠1s
+     * 4. 如果获取到command，则并行处理command
+     * 5. 如果处理成功，则将workflowInstance放入到缓存中
+     * 6. 将workflowInstance放入到workflowEventQueue中
+     * 7. 如果处理失败，则将command移动到错误表中
+     * 8. 如果没有获取到command，则休眠1s
+     * 9. 如果线程被中断，则退出循环
+     * 10. 如果出现异常，则休眠1s
+     *
      */
     @Override
     public void run() {
@@ -135,7 +153,8 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                     Thread.sleep(Constants.SLEEP_TIME_MILLIS);
                     continue;
                 }
-
+                // 这也是一个值得学习的地方，通过并行流的方式来处理command，加快处理速度
+                //这是调度器的核心逻辑，通过并行流的方式来消费command，生产数据
                 commands.parallelStream()
                         .forEach(command -> {
                             try {
@@ -153,6 +172,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                                     log.error(
                                             "The workflow instance is already been cached, this case shouldn't be happened");
                                 }
+                                //将workflowInstance放入到缓存中
                                 processInstanceExecCacheManager.cache(processInstance.getId(), workflowExecuteRunnable);
                                 workflowEventQueue.addEvent(
                                         new WorkflowEvent(WorkflowEventType.START_WORKFLOW, processInstance.getId()));
@@ -164,6 +184,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                 MasterServerMetrics.incMasterConsumeCommand(commands.size());
             } catch (InterruptedException interruptedException) {
                 log.warn("Master schedule bootstrap interrupted, close the loop", interruptedException);
+                // 恢复中断标志
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
@@ -174,23 +195,41 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
         }
     }
 
+
     private List<Command> findCommands() throws MasterException {
         try {
+            //获取当前时间
             long scheduleStartTime = System.currentTimeMillis();
+            //获取当前的slot
             int thisMasterSlot = masterSlotManager.getSlot();
+            //获取master的数量
             int masterCount = masterSlotManager.getMasterSize();
+            /***
+             * 如果master的数量小于等于0，则返回空集合
+             */
             if (masterCount <= 0) {
                 log.warn("Master count: {} is invalid, the current slot: {}", masterCount, thisMasterSlot);
+                // 这是一个很好的习惯。如果返回的集合是空的，那么就返回一个空的集合，而不是null。
                 return Collections.emptyList();
             }
+            //获取每次从数据库中获取command的数量
             int pageSize = masterConfig.getFetchCommandNum();
+            //  每台shceduler 实例根据自己的槽位来获取自己的command,并且采用分页查询
+            //q 这里返回值写成final有什么好处？
             final List<Command> result =
                     commandService.findCommandPageBySlot(pageSize, masterCount, thisMasterSlot);
+            /***
+             * 如果获取到command，则打印日志
+             * 计算获取command的时间
+             * 记录获取command的时间
+             * 返回获取到的command
+             */
             if (CollectionUtils.isNotEmpty(result)) {
                 long cost = System.currentTimeMillis() - scheduleStartTime;
                 log.info(
                         "Master schedule bootstrap loop command success, fetch command size: {}, cost: {}ms, current slot: {}, total slot size: {}",
                         result.size(), cost, thisMasterSlot, masterCount);
+
                 ProcessInstanceMetrics.recordCommandQueryTime(cost);
             }
             return result;

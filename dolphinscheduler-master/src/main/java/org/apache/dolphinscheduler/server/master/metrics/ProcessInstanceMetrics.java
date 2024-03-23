@@ -31,6 +31,14 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Timer;
 
+/***
+ * @UtilityClass 这是一个lombok 工具类的注解，
+ * 1、可以将类中的所有方法都变成静态方法，不需要再加static关键字
+ * 2、为这个类创建一个私有的构造方法，并在构造方法中抛出一个异常防止通过构造方法创建对象
+ * 3、将这个类标记为final，不允许被继承
+ */
+
+// 这个类的作用   用于记录工作流实例的指标    这些指标在什么时候被使用呢？
 @UtilityClass
 @Slf4j
 public class ProcessInstanceMetrics {
@@ -47,7 +55,8 @@ public class ProcessInstanceMetrics {
         }
 
     }
-
+   //创建一个计时器
+    //Metrics.globalRegistry 是一个全局的注册表，用于存储所有的指标 ，是被记录到内存中吗？    是的，是被记录到内存中的
     private final Timer commandQueryTimer =
             Timer.builder("ds.workflow.command.query.duration")
                     .description("Command query duration")
@@ -58,6 +67,10 @@ public class ProcessInstanceMetrics {
                     .description("Process instance generated duration")
                     .register(Metrics.globalRegistry);
 
+    /***
+     * 记录命令查询时间，这个时间会被记录在commandQueryTimer中
+     * @param milliseconds
+     */
     public void recordCommandQueryTime(long milliseconds) {
         commandQueryTimer.record(milliseconds, TimeUnit.MILLISECONDS);
     }

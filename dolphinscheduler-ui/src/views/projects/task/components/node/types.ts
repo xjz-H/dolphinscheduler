@@ -101,6 +101,7 @@ interface IDependentItem {
   cycle?: 'month' | 'week' | 'day' | 'hour'
   dateValue?: string
   dependentType?: 'DEPENDENT_ON_WORKFLOW' | 'DEPENDENT_ON_TASK'
+  parameterPassing?: boolean
 }
 
 interface IDependTask {
@@ -286,6 +287,7 @@ interface ITaskParams {
   mainArgs?: string
   others?: string
   httpMethod?: string
+  httpBody?: string
   httpCheckCondition?: string
   httpParams?: []
   url?: string
@@ -450,6 +452,8 @@ interface ITaskParams {
   filterCondition?: string
   listParameters?: Array<any>
   yarnQueue?: string
+  awsRegion?: string
+  kubeConfig?: string
 }
 
 interface INodeData

@@ -54,6 +54,7 @@ import {
 } from '@vicons/antd'
 import { IDefinitionData } from '../types'
 import styles from '../index.module.scss'
+import { queryProjectPreferenceByProjectCode } from '@/service/modules/projects-preference'
 
 const props = {
   row: {
@@ -172,6 +173,85 @@ export default defineComponent({
       ]
     }
 
+    const projectPreferences = ref({} as any)
+
+    const initProjectPreferences = async (projectCode: number) => {
+      if (projectCode) {
+        await queryProjectPreferenceByProjectCode(projectCode).then(
+          (result: any) => {
+            if (result?.preferences && result.state === 1) {
+              projectPreferences.value = JSON.parse(result.preferences)
+            }
+          }
+        )
+      }
+    }
+
+    const containValueInOptions = (
+      options: Array<any>,
+      findingValue: string
+    ): boolean => {
+      for (const { value } of options) {
+        if (findingValue === value) {
+          return true
+        }
+      }
+      return false
+    }
+
+    const restructureForm = async (form: any) => {
+      await initProjectPreferences(props.row.projectCode)
+      if (projectPreferences.value?.taskPriority) {
+        form.processInstancePriority = projectPreferences.value.taskPriority
+      }
+      if (projectPreferences.value?.warningType) {
+        form.warningType = projectPreferences.value.warningType
+      }
+      if (projectPreferences.value?.workerGroup) {
+        if (
+          containValueInOptions(
+            variables.workerGroups,
+            projectPreferences.value.workerGroup
+          )
+        ) {
+          form.workerGroup = projectPreferences.value.workerGroup
+        }
+      }
+      if (projectPreferences.value?.tenant) {
+        if (
+          containValueInOptions(
+            variables.tenantList,
+            projectPreferences.value.tenant
+          )
+        ) {
+          form.tenantCode = projectPreferences.value.tenant
+        }
+      }
+      if (
+        projectPreferences.value?.environmentCode &&
+        variables?.environmentList
+      ) {
+        if (
+          containValueInOptions(
+            variables.environmentList,
+            projectPreferences.value.environmentCode
+          )
+        ) {
+          form.environmentCode = projectPreferences.value.environmentCode
+        }
+      }
+      if (projectPreferences.value?.alertGroups && variables?.alertGroups) {
+        if (
+          containValueInOptions(
+            variables.alertGroups,
+            projectPreferences.value.alertGroups
+          )
+        ) {
+          form.warningGroupId = projectPreferences.value.alertGroups
+        }
+      }
+    }
+
     const updateWorkerGroup = () => {
       startState.startForm.environmentCode = null
     }
@@ -206,6 +286,7 @@ export default defineComponent({
       () => {
         if (props.show) {
           getStartParamsList(props.row.code)
+          restructureForm(startState.startForm)
           if (props.taskCode)
             startState.startForm.startNodeList = props.taskCode
         }
@@ -293,6 +374,21 @@ export default defineComponent({
               v-model:value={this.startForm.warningType}
             />
           </NFormItem>
+          {this.startForm.warningType !== 'NONE' && (
+            <NFormItem
+              label={t('project.workflow.alarm_group')}
+              path='warningGroupId'
+              required
+            >
+              <NSelect
+                options={this.alertGroups}
+                placeholder={t('project.workflow.please_choose')}
+                v-model:value={this.startForm.warningGroupId}
+                clearable
+                filterable
+              />
+            </NFormItem>
+          )}
           <NFormItem
             label={t('project.workflow.workflow_priority')}
             path='processInstancePriority'
@@ -311,6 +407,7 @@ export default defineComponent({
               options={this.workerGroups}
               onUpdateValue={this.updateWorkerGroup}
               v-model:value={this.startForm.workerGroup}
+              filterable
             />
           </NFormItem>
           <NFormItem
@@ -320,6 +417,7 @@ export default defineComponent({
             <NSelect
               options={this.tenantList}
               v-model:value={this.startForm.tenantCode}
+              filterable
             />
           </NFormItem>
 
@@ -333,21 +431,9 @@ export default defineComponent({
               )}
               v-model:value={this.startForm.environmentCode}
               clearable
+              filterable
             />
           </NFormItem>
-          {this.startForm.warningType !== 'NONE' && (
-            <NFormItem
-              label={t('project.workflow.alarm_group')}
-              path='warningGroupId'
-            >
-              <NSelect
-                options={this.alertGroups}
-                placeholder={t('project.workflow.please_choose')}
-                v-model:value={this.startForm.warningGroupId}
-                clearable
-              />
-            </NFormItem>
-          )}
           <NFormItem
             label={t('project.workflow.complement_data')}
             path='complement_data'
@@ -433,8 +519,8 @@ export default defineComponent({
                   </NFormItem>
                 )}
                 <NFormItem
-                    label={t('project.workflow.order_of_execution')}
-                    path='executionOrder'
+                  label={t('project.workflow.order_of_execution')}
+                  path='executionOrder'
                 >
                   <NRadioGroup v-model:value={this.startForm.executionOrder}>
                     <NSpace>

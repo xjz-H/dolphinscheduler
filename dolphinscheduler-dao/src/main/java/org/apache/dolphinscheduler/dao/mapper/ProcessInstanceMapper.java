@@ -20,9 +20,11 @@ package org.apache.dolphinscheduler.dao.mapper;
 import org.apache.dolphinscheduler.common.enums.WorkflowExecutionStatus;
 import org.apache.dolphinscheduler.dao.entity.ExecuteStatusCount;
 import org.apache.dolphinscheduler.dao.entity.ProcessInstance;
+import org.apache.dolphinscheduler.dao.model.WorkflowInstanceStatusCountDto;
 
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -168,10 +170,10 @@ public interface ProcessInstanceMapper extends BaseMapper<ProcessInstance> {
      * @param projectCodes projectCodes
      * @return ExecuteStatusCount list
      */
-    List<ExecuteStatusCount> countInstanceStateByProjectCodes(
-                                                              @Param("startTime") Date startTime,
-                                                              @Param("endTime") Date endTime,
-                                                              @Param("projectCodes") Long[] projectCodes);
+    List<WorkflowInstanceStatusCountDto> countWorkflowInstanceStateByProjectCodes(
+                                                                                  @Param("startTime") Date startTime,
+                                                                                  @Param("endTime") Date endTime,
+                                                                                  @Param("projectCodes") Collection<Long> projectCodes);
 
     /**
      * query process instance by processDefinitionCode
@@ -198,31 +200,17 @@ public interface ProcessInstanceMapper extends BaseMapper<ProcessInstance> {
                                               @Param("testFlag") int testFlag);
 
     /**
-     * query last running process instance
-     *
-     * @param definitionCode definitionCode
-     * @param startTime      startTime
-     * @param endTime        endTime
-     * @param testFlag       testFlag
-     * @param stateArray     stateArray
-     * @return process instance
-     */
-    ProcessInstance queryLastRunningProcess(@Param("processDefinitionCode") Long definitionCode,
-                                            @Param("startTime") Date startTime,
-                                            @Param("endTime") Date endTime,
-                                            @Param("testFlag") int testFlag,
-                                            @Param("states") int[] stateArray);
-
-    /**
      * query last manual process instance
      *
      * @param definitionCode definitionCode
+     * @param taskCode taskCode
      * @param startTime      startTime
      * @param endTime        endTime
      * @param testFlag       testFlag
      * @return process instance
      */
     ProcessInstance queryLastManualProcess(@Param("processDefinitionCode") Long definitionCode,
+                                           @Param("taskCode") Long taskCode,
                                            @Param("startTime") Date startTime,
                                            @Param("endTime") Date endTime,
                                            @Param("testFlag") int testFlag);
@@ -270,6 +258,10 @@ public interface ProcessInstanceMapper extends BaseMapper<ProcessInstance> {
 
     List<ProcessInstance> queryByProcessDefineCodeAndStatus(@Param("processDefinitionCode") Long processDefinitionCode,
                                                             @Param("states") int[] states);
+
+    List<ProcessInstance> queryByWorkflowCodeVersionStatus(@Param("workflowDefinitionCode") long workflowDefinitionCode,
+                                                           @Param("workflowDefinitionVersion") int workflowDefinitionVersion,
+                                                           @Param("states") int[] states);
 
     List<ProcessInstance> queryByProcessDefineCodeAndProcessDefinitionVersionAndStatusAndNextId(@Param("processDefinitionCode") Long processDefinitionCode,
                                                                                                 @Param("processDefinitionVersion") int processDefinitionVersion,

@@ -17,6 +17,8 @@
 
 package org.apache.dolphinscheduler.api.controller;
 
+import static org.mockito.Mockito.doNothing;
+
 import org.apache.dolphinscheduler.api.enums.Status;
 import org.apache.dolphinscheduler.api.service.impl.ProcessDefinitionServiceImpl;
 import org.apache.dolphinscheduler.api.utils.PageInfo;
@@ -166,12 +168,12 @@ public class ProcessDefinitionControllerTest {
 
         Mockito.when(processDefinitionService.updateProcessDefinition(user, projectCode, name, code, description,
                 globalParams,
-                locations, timeout, relationJson, taskDefinitionJson, "",
+                locations, timeout, relationJson, taskDefinitionJson,
                 ProcessExecutionTypeEnum.PARALLEL)).thenReturn(result);
 
         Result response = processDefinitionController.updateProcessDefinition(user, projectCode, name, code,
                 description, globalParams,
-                locations, timeout, relationJson, taskDefinitionJson, "", ProcessExecutionTypeEnum.PARALLEL,
+                locations, timeout, relationJson, taskDefinitionJson, ProcessExecutionTypeEnum.PARALLEL,
                 ReleaseState.OFFLINE);
         Assertions.assertEquals(Status.SUCCESS.getCode(), response.getCode().intValue());
     }
@@ -179,13 +181,13 @@ public class ProcessDefinitionControllerTest {
     @Test
     public void testReleaseProcessDefinition() {
         long projectCode = 1L;
-        int id = 1;
+        long id = 1L;
         Map<String, Object> result = new HashMap<>();
         putMsg(result, Status.SUCCESS);
 
-        Mockito.when(processDefinitionService.releaseProcessDefinition(user, projectCode, id, ReleaseState.OFFLINE))
-                .thenReturn(result);
-        Result response =
+        doNothing().when(processDefinitionService)
+                .offlineWorkflowDefinition(user, projectCode, id);
+        Result<Boolean> response =
                 processDefinitionController.releaseProcessDefinition(user, projectCode, id, ReleaseState.OFFLINE);
         Assertions.assertTrue(response != null && response.isSuccess());
     }
@@ -383,7 +385,7 @@ public class ProcessDefinitionControllerTest {
         String processDefinitionIds = "1,2";
         long projectCode = 1L;
         HttpServletResponse response = new MockHttpServletResponse();
-        Mockito.doNothing().when(this.processDefinitionService).batchExportProcessDefinitionByCodes(user, projectCode,
+        doNothing().when(this.processDefinitionService).batchExportProcessDefinitionByCodes(user, projectCode,
                 processDefinitionIds, response);
         processDefinitionController.batchExportProcessDefinitionByCodes(user, projectCode, processDefinitionIds,
                 response);
@@ -420,13 +422,11 @@ public class ProcessDefinitionControllerTest {
     @Test
     public void testDeleteProcessDefinitionVersion() {
         long projectCode = 1L;
-        Map<String, Object> resultMap = new HashMap<>();
-        putMsg(resultMap, Status.SUCCESS);
-        Mockito.when(processDefinitionService.deleteProcessDefinitionVersion(
-                user, projectCode, 1, 10)).thenReturn(resultMap);
-        Result result = processDefinitionController.deleteProcessDefinitionVersion(
-                user, projectCode, 1, 10);
-        Assertions.assertEquals(Status.SUCCESS.getCode(), (int) result.getCode());
+        long workflowCode = 1L;
+        int workflowVersion = 10;
+        doNothing().when(processDefinitionService).deleteProcessDefinitionVersion(user, projectCode, workflowCode,
+                workflowVersion);
+        processDefinitionController.deleteProcessDefinitionVersion(user, projectCode, workflowCode, workflowVersion);
     }
 
     @Test

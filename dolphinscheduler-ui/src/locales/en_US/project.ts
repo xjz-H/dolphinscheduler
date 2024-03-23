@@ -40,7 +40,8 @@ export default {
     authorize_level: 'Authorize Level',
     no_permission: 'No Permission',
     read_permission: 'Read Permission',
-    all_permission: 'All Permission'
+    all_permission: 'All Permission',
+    assign_worker_group: 'Worker Group'
   },
   workflow: {
     on_line: 'Online',
@@ -82,6 +83,8 @@ export default {
     timezone: 'Timezone',
     up_line: 'Online',
     down_line: 'Offline',
+    time_up_line: 'Scheduler Online',
+    time_down_line: 'Scheduler Offline',
     copy_workflow: 'Copy Workflow',
     copy_workflow_name: 'Copy workflow name',
     visit_workflow_instances: 'Visit workflow instances',
@@ -129,6 +132,7 @@ export default {
     success_send: 'Success',
     failure_send: 'Failure',
     all_send: 'All',
+    warning_group_tip: 'Please select alarm group',
     whether_complement_data: 'Whether it is a complement process?',
     schedule_date: 'Schedule date',
     select_date: 'Select Date',
@@ -232,6 +236,20 @@ export default {
     want_to_set_timing: 'Would you like to set the workflow timing?',
     confirm_to_online: 'Confirm to make the workflow online?',
     confirm_to_offline: 'Confirm to make the workflow offline?',
+    time_to_online: 'Confirm to make the Scheduler online?',
+    time_to_offline: 'Confirm to make the Scheduler offline?',
+    warning_dependent_tasks_title: 'Warning',
+    warning_dependent_tasks_desc:
+      'The downstream dependent tasks exists. Are you sure to make the workflow offline?',
+    warning_dependencies: 'Dependencies:',
+    delete_validate_dependent_tasks_desc:
+      'The downstream dependent tasks exists. You can not delete the workflow.',
+    warning_offline_scheduler_dependent_tasks_desc:
+      'The downstream dependent tasks exists. Are you sure to make the scheduler offline?',
+    delete_task_validate_dependent_tasks_desc:
+      'The downstream dependent tasks exists. You can not delete the task.',
+    warning_delete_scheduler_dependent_tasks_desc:
+      'The downstream dependent tasks exists. Are you sure to delete the scheduler?'
   },
   task: {
     on_line: 'Online',
@@ -300,7 +318,9 @@ export default {
     startup_parameter: 'Startup Parameter',
     whether_dry_run: 'Whether Dry-Run',
     please_choose: 'Please Choose',
-    remove_task_cache: 'Clear cache'
+    remove_task_cache: 'Clear cache',
+    delete_validate_dependent_tasks_desc:
+      'The downstream dependent tasks exists. You can not delete the task.'
   },
   dag: {
     create: 'Create Workflow',
@@ -432,7 +452,7 @@ export default {
     resources: 'Resources',
     resources_tips: 'Please select resources',
     resources_limit_tips: 'Please select again, resource limit:',
-    non_resources_tips: 'Please delete all non-existent resources',
+    no_resources_tips: 'Please delete all non-existent resources',
     useless_resources_tips: 'Unauthorized or deleted resources',
     custom_parameters: 'Custom Parameters',
     copy_success: 'Copy success',
@@ -493,6 +513,9 @@ export default {
     http_url_validator: 'The request address must contain HTTP or HTTPS',
     http_method: 'Http Method',
     http_parameters: 'Http Parameters',
+    http_body: 'Http Body',
+    http_body_tips:
+      'Please fill in the http body, if filled, http parameters in the body type will be ignored',
     http_check_condition: 'Http Check Condition',
     http_condition: 'Http Condition',
     http_condition_tips: 'Please Enter Http Condition',
@@ -539,7 +562,7 @@ export default {
     model_type: 'ModelType',
     form: 'Form',
     table: 'Table',
-    table_tips: 'Please enter Mysql Table(required)',
+    table_tips: 'Please enter Table(required)',
     column_type: 'ColumnType',
     all_columns: 'All Columns',
     some_columns: 'Some Columns',
@@ -644,6 +667,7 @@ export default {
     hour: 'hour',
     add_dependency: 'Add dependency',
     waiting_dependent_start: 'Waiting Dependent start',
+    dependent_task_parameter_passing: 'Parameter Passing',
     check_interval: 'Check interval',
     check_interval_tips: 'Check interval must be a positive integer',
     waiting_dependent_complete: 'Waiting Dependent complete',
@@ -825,9 +849,12 @@ export default {
     please_select_target_datasource: 'Please select target datasource id',
     please_select_target_database: 'Please select target database',
     please_enter_target_table: 'Please select target table name',
-    please_enter_target_filter_expression: 'Please enter target filter expression',
-    please_enter_comparison_name_the_alias_in_comparison_execute_sql: 'Please enter comparison name the alias in comparison execute sql',
-    please_enter_statistics_name_the_alias_in_statistics_execute_sql: 'Please enter statistics name the alias in statistics execute sql',
+    please_enter_target_filter_expression:
+      'Please enter target filter expression',
+    please_enter_comparison_name_the_alias_in_comparison_execute_sql:
+      'Please enter comparison name the alias in comparison execute sql',
+    please_enter_statistics_name_the_alias_in_statistics_execute_sql:
+      'Please enter statistics name the alias in statistics execute sql',
     please_enter_comparison_execute_sql: 'Please enter comparison execute sql',
     please_enter_statistics_execute_sql: 'Please enter statistics execute sql',
     please_enter_threshold_number_is_needed:
@@ -881,8 +908,7 @@ export default {
     yarn_queue_tips: 'Please input yarn queue(optional)',
     dependent_type: 'Dependency Type',
     dependent_on_workflow: 'Dependent on workflow',
-    dependent_on_task: 'Dependent on task',
-
+    dependent_on_task: 'Dependent on task'
   },
   menu: {
     fav: 'Favorites',
@@ -909,15 +935,16 @@ export default {
     edit: 'Edit',
     delete: 'Delete',
     delete_confirm: 'Delete?',
-    success: 'Success',
+    success: 'Success'
   },
   preference: {
     edit_preference: 'Edit Preference',
     preference_manage: 'Project Preference Management',
-    instruction_tips: 'The settings below will affect all workflows and tasks under this project.When creating the workflow or task, these preferences will be the default value of their components.',
+    instruction_tips:
+      'The settings below will affect all workflows and tasks under this project.When creating the workflow or task, these preferences will be the default value of their components.',
     success: 'Success',
     submit: 'Submit',
     enabled: 'Enabled',
     disabled: 'Disabled'
-  },
+  }
 }

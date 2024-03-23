@@ -20,6 +20,7 @@ package org.apache.dolphinscheduler.api.service.impl;
 import static org.apache.dolphinscheduler.plugin.task.api.TaskConstants.TASK_TYPE_DEPENDENT;
 
 import org.apache.dolphinscheduler.api.enums.Status;
+import org.apache.dolphinscheduler.api.exceptions.ServiceException;
 import org.apache.dolphinscheduler.api.service.WorkFlowLineageService;
 import org.apache.dolphinscheduler.common.constants.Constants;
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -78,39 +80,28 @@ public class WorkFlowLineageServiceImpl extends BaseServiceImpl implements WorkF
     private TaskDefinitionMapper taskDefinitionMapper;
 
     @Override
-    public Map<String, Object> queryWorkFlowLineageByName(long projectCode, String workFlowName) {
-        Map<String, Object> result = new HashMap<>();
+    public List<WorkFlowLineage> queryWorkFlowLineageByName(long projectCode, String workFlowName) {
         Project project = projectMapper.queryByCode(projectCode);
         if (project == null) {
-            log.error("Project does not exist, projectCode:{}.", projectCode);
-            putMsg(result, Status.PROJECT_NOT_FOUND, projectCode);
-            return result;
+            throw new ServiceException(Status.PROJECT_NOT_FOUND, projectCode);
         }
-        List<WorkFlowLineage> workFlowLineageList =
-                workFlowLineageMapper.queryWorkFlowLineageByName(projectCode, workFlowName);
-        result.put(Constants.DATA_LIST, workFlowLineageList);
-        putMsg(result, Status.SUCCESS);
-        return result;
+        return workFlowLineageMapper.queryWorkFlowLineageByName(projectCode, workFlowName);
     }
 
     @Override
     public Map<String, Object> queryWorkFlowLineageByCode(long projectCode, long sourceWorkFlowCode) {
-        Map<String, Object> result = new HashMap<>();
         Project project = projectMapper.queryByCode(projectCode);
         if (project == null) {
-            log.error("Project does not exist, projectCode:{}.", projectCode);
-            putMsg(result, Status.PROJECT_NOT_FOUND, projectCode);
-            return result;
+            throw new ServiceException(Status.PROJECT_NOT_FOUND, projectCode);
         }
         List<WorkFlowLineage> workFlowLineages = new ArrayList<>();
         Set<WorkFlowRelation> workFlowRelations = new HashSet<>();
         recursiveWorkFlow(projectCode, sourceWorkFlowCode, workFlowLineages, workFlowRelations);
         Map<String, Object> workFlowLists = new HashMap<>();
+        // todo: use vo
         workFlowLists.put(Constants.WORKFLOW_LIST, workFlowLineages);
         workFlowLists.put(Constants.WORKFLOW_RELATION_LIST, workFlowRelations);
-        result.put(Constants.DATA_LIST, workFlowLists);
-        putMsg(result, Status.SUCCESS);
-        return result;
+        return workFlowLists;
     }
 
     private void recursiveWorkFlow(long projectCode,
@@ -288,11 +279,29 @@ public class WorkFlowLineageServiceImpl extends BaseServiceImpl implements WorkF
     public Set<TaskMainInfo> queryTaskDepOnProcess(long projectCode, long processDefinitionCode) {
         Set<TaskMainInfo> taskMainInfos = new HashSet<>();
         List<TaskMainInfo> taskDependents =
-                workFlowLineageMapper.queryTaskDependentDepOnProcess(projectCode, processDefinitionCode);
+                workFlowLineageMapper.queryTaskDependentOnProcess(processDefinitionCode, 0);
         List<TaskMainInfo> taskSubProcess =
                 workFlowLineageMapper.queryTaskSubProcessDepOnProcess(projectCode, processDefinitionCode);
         taskMainInfos.addAll(taskDependents);
         taskMainInfos.addAll(taskSubProcess);
         return taskMainInfos;
+    }
+
+    /**
+     * Query downstream tasks depend on a process definition or a task
+     *
+     * @param processDefinitionCode Process definition code want to query tasks dependence
+     * @param taskCode Task code want to query tasks dependence
+     * @return downstream dependent tasks
+     */
+    @Override
+    public Map<String, Object> queryDownstreamDependentTasks(Long processDefinitionCode, Long taskCode) {
+        Map<String, Object> result = new HashMap<>();
+        List<TaskMainInfo> taskDependents =
+                workFlowLineageMapper.queryTaskDependentOnProcess(processDefinitionCode,
+                        Objects.isNull(taskCode) ? 0 : taskCode.longValue());
+        result.put(Constants.DATA_LIST, taskDependents);
+        putMsg(result, Status.SUCCESS);
+        return result;
     }
 }

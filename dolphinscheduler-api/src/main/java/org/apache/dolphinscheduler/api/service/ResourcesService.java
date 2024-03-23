@@ -61,7 +61,7 @@ public interface ResourcesService {
      * @param currentDir current directory
      * @return create result code
      */
-    Result<Object> createResource(User loginUser,
+    Result<Object> uploadResource(User loginUser,
                                   String name,
                                   ResourceType type,
                                   MultipartFile file,
@@ -160,8 +160,8 @@ public interface ResourcesService {
      * @param content content
      * @return create result code
      */
-    Result<Object> onlineCreateResource(User loginUser, ResourceType type, String fileName, String fileSuffix,
-                                        String content, String currentDirectory);
+    Result<Object> createResourceFile(User loginUser, ResourceType type, String fileName, String fileSuffix,
+                                      String content, String currentDirectory);
 
     /**
      * create or update resource.
@@ -194,15 +194,6 @@ public interface ResourcesService {
     org.springframework.core.io.Resource downloadResource(User loginUser, String fullName) throws IOException;
 
     /**
-     * list all file
-     *
-     * @param loginUser login user
-     * @param userId user id
-     * @return unauthorized result code
-     */
-    Map<String, Object> authorizeResourceTree(User loginUser, Integer userId);
-
-    /**
      * Get resource by given resource type and full name.
      * Useful in Python API create task which need processDefinition information.
      *
@@ -218,51 +209,6 @@ public interface ResourcesService {
      * @param days number of days
      */
     DeleteDataTransferResponse deleteDataTransferData(User loginUser, Integer days);
-
-    /**
-     * unauthorized file
-     *
-     * @param loginUser login user
-     * @param userId user id
-     * @return unauthorized result code
-     */
-    Map<String, Object> unauthorizedFile(User loginUser, Integer userId);
-
-    /**
-     * unauthorized udf function
-     *
-     * @param loginUser login user
-     * @param userId user id
-     * @return unauthorized result code
-     */
-    Map<String, Object> unauthorizedUDFFunction(User loginUser, Integer userId);
-
-    /**
-     * authorized udf function
-     *
-     * @param loginUser login user
-     * @param userId user id
-     * @return authorized result code
-     */
-    Map<String, Object> authorizedUDFFunction(User loginUser, Integer userId);
-
-    /**
-     * authorized file
-     *
-     * @param loginUser login user
-     * @param userId user id
-     * @return authorized result
-     */
-    Map<String, Object> authorizedFile(User loginUser, Integer userId);
-
-    /**
-     * get resource by id
-     * @param fullName resource full name
-     * @param tenantCode owner's tenant code of resource
-     * @return resource
-     */
-    Result<Object> queryResourceByFullName(User loginUser, String fullName, String tenantCode,
-                                           ResourceType type) throws IOException;
 
     /**
      * get resource base dir

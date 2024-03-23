@@ -270,6 +270,10 @@ export default {
                                 title: 'Vertica',
                                 link: '/en-us/docs/dev/user_doc/guide/datasource/vertica.html',
                             },
+                            {
+                                title: 'Remote Shell',
+                                link: '/en-us/docs/dev/user_doc/guide/task/remoteshell.html',
+                            },
                         ],
                     },
                     {
@@ -407,6 +411,9 @@ export default {
                             {
                                 title: 'Slack',
                                 link: '/en-us/docs/dev/user_doc/guide/alert/slack.html',
+                            },{
+                                title: 'Aliyun Voice',
+                                link: '/en-us/docs/dev/user_doc/guide/alert/aliyun-voice.html',
                             },
                         ],
                     },
@@ -966,6 +973,10 @@ export default {
                                 title: 'Vertica',
                                 link: '/zh-cn/docs/dev/user_doc/guide/datasource/vertica.html',
                             },
+                            {
+                                title: 'Remote Shell',
+                                link: '/zh-cn/docs/dev/user_doc/guide/task/remoteshell.html',
+                            },
                         ],
                     },
                     {
@@ -1120,6 +1131,10 @@ export default {
                             {
                                 title: 'Slack告警',
                                 link: '/zh-cn/docs/dev/user_doc/guide/alert/slack.html',
+                            },
+                            {
+                                title: '阿里云语音告警',
+                                link: '/zh-cn/docs/dev/user_doc/guide/alert/aliyun-voice.html',
                             },
                         ],
                     },

@@ -18,7 +18,9 @@
 package org.apache.dolphinscheduler.api.service;
 
 import org.apache.dolphinscheduler.dao.entity.TaskMainInfo;
+import org.apache.dolphinscheduler.dao.entity.WorkFlowLineage;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +30,7 @@ import java.util.Set;
  */
 public interface WorkFlowLineageService {
 
-    Map<String, Object> queryWorkFlowLineageByName(long projectCode, String workFlowName);
+    List<WorkFlowLineage> queryWorkFlowLineageByName(long projectCode, String workFlowName);
 
     Map<String, Object> queryWorkFlowLineageByCode(long projectCode, long workFlowCode);
 
@@ -42,6 +44,15 @@ public interface WorkFlowLineageService {
      * @return Set of TaskMainInfo
      */
     Set<TaskMainInfo> queryTaskDepOnProcess(long projectCode, long processDefinitionCode);
+
+    /**
+     * Query downstream tasks depend on a process definition or a task
+     *
+     * @param processDefinitionCode Process definition code want to query tasks dependence
+     * @param taskCode Task code want to query tasks dependence
+     * @return downstream dependent tasks
+     */
+    Map<String, Object> queryDownstreamDependentTasks(Long processDefinitionCode, Long taskCode);
 
     /**
      * Query and return tasks dependence with string format, is a wrapper of queryTaskDepOnTask and task query method.

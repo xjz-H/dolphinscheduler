@@ -19,9 +19,9 @@ package org.apache.dolphinscheduler.server.master.runner;
 
 import org.apache.dolphinscheduler.common.thread.BaseDaemonThread;
 import org.apache.dolphinscheduler.common.thread.ThreadUtils;
+import org.apache.dolphinscheduler.plugin.task.api.enums.TaskExecutionStatus;
 import org.apache.dolphinscheduler.server.master.runner.dispatcher.TaskDispatchFactory;
 import org.apache.dolphinscheduler.server.master.runner.dispatcher.TaskDispatcher;
-import org.apache.dolphinscheduler.server.master.runner.execute.DefaultTaskExecuteRunnable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,7 +43,7 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
 
     private final AtomicBoolean RUNNING_FLAG = new AtomicBoolean(false);
 
-    private final AtomicInteger DISPATCHED_TIMES = new AtomicInteger();
+    private final AtomicInteger DISPATCHED_CONSECUTIVE_FAILURE_TIMES = new AtomicInteger();
 
     private static final Integer MAX_DISPATCHED_FAILED_TIMES = 100;
 
@@ -66,28 +66,28 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
     public void run() {
         DefaultTaskExecuteRunnable defaultTaskExecuteRunnable;
         while (RUNNING_FLAG.get()) {
+            defaultTaskExecuteRunnable = globalTaskDispatchWaitingQueue.takeTaskExecuteRunnable();
             try {
-                defaultTaskExecuteRunnable = globalTaskDispatchWaitingQueue.takeNeedToDispatchTaskExecuteRunnable();
-            } catch (InterruptedException e) {
-                log.warn("Get waiting dispatch task failed, the current thread has been interrupted, will stop loop");
-                Thread.currentThread().interrupt();
-                break;
-            }
-            try {
-                final TaskDispatcher taskDispatcher = taskDispatchFactory
-                        .getTaskDispatcher(defaultTaskExecuteRunnable.getTaskInstance().getTaskType());
+                TaskExecutionStatus status = defaultTaskExecuteRunnable.getTaskInstance().getState();
+                if (status != TaskExecutionStatus.SUBMITTED_SUCCESS && status != TaskExecutionStatus.DELAY_EXECUTION) {
+                    log.warn("The TaskInstance {} state is : {}, will not dispatch",
+                            defaultTaskExecuteRunnable.getTaskInstance().getName(), status);
+                    continue;
+                }
+
+                TaskDispatcher taskDispatcher =
+                        taskDispatchFactory.getTaskDispatcher(defaultTaskExecuteRunnable.getTaskInstance());
                 taskDispatcher.dispatchTask(defaultTaskExecuteRunnable);
-                DISPATCHED_TIMES.set(0);
+                DISPATCHED_CONSECUTIVE_FAILURE_TIMES.set(0);
             } catch (Exception e) {
                 defaultTaskExecuteRunnable.getTaskExecutionContext().increaseDispatchFailTimes();
-                globalTaskDispatchWaitingQueue.submitNeedToDispatchTaskExecuteRunnable(defaultTaskExecuteRunnable);
-                if (DISPATCHED_TIMES.incrementAndGet() > MAX_DISPATCHED_FAILED_TIMES) {
+                globalTaskDispatchWaitingQueue.submitTaskExecuteRunnable(defaultTaskExecuteRunnable);
+                if (DISPATCHED_CONSECUTIVE_FAILURE_TIMES.incrementAndGet() > MAX_DISPATCHED_FAILED_TIMES) {
                     ThreadUtils.sleep(10 * 1000L);
                 }
-                log.error("Dispatch task failed", e);
+                log.error("Dispatch Task: {} failed", defaultTaskExecuteRunnable.getTaskInstance().getName(), e);
             }
         }
-        log.info("GlobalTaskDispatchWaitingQueueLooper started...");
     }
 
     @Override
@@ -95,6 +95,8 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
         if (RUNNING_FLAG.compareAndSet(true, false)) {
             log.info("GlobalTaskDispatchWaitingQueueLooper stopping...");
             log.info("GlobalTaskDispatchWaitingQueueLooper stopped...");
+        } else {
+            log.error("GlobalTaskDispatchWaitingQueueLooper is not started");
         }
     }
 }

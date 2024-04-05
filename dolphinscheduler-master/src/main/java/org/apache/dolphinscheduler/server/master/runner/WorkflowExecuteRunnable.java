@@ -144,7 +144,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
     private final ProcessAlertManager processAlertManager;
 
     private final IWorkflowExecuteContext workflowExecuteContext;
-
+    //使用枚举来记录工作流的状态
     private WorkflowRunnableStatus workflowRunnableStatus = WorkflowRunnableStatus.CREATED;
 
     /**
@@ -278,7 +278,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 // if state handle success then will remove this state, otherwise will retry this state next time.
                 // The state should always handle success except database error.
                 checkProcessInstance(stateEvent);
-
+               //orElseThrow 为空就抛出异常
                 StateEventHandler stateEventHandler =
                         StateEventHandlerManager.getStateEventHandler(stateEvent.getType())
                                 .orElseThrow(() -> new StateEventHandleError(
@@ -708,6 +708,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
     /**
      * ProcessInstance start entrypoint.
      */
+    //https://blog.csdn.net/lw277232240/article/details/126996132
     @Override
     public WorkflowStartStatus startWorkflow() {
 
@@ -720,12 +721,12 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 return WorkflowStartStatus.DUPLICATED_SUBMITTED;
             }
             if (workflowRunnableStatus == WorkflowRunnableStatus.CREATED) {
-                initTaskQueue();
+                initTaskQueue();////初始化任务调度配置
                 workflowRunnableStatus = WorkflowRunnableStatus.INITIALIZE_QUEUE;
                 log.info("workflowStatue changed to :{}", workflowRunnableStatus);
             }
             if (workflowRunnableStatus == WorkflowRunnableStatus.INITIALIZE_QUEUE) {
-                submitPostNode(null);
+                submitPostNode(null);//提交任务到队列中，注意是先提交源头结点，源头结点运行完再提交源头结点的下有节点
                 workflowRunnableStatus = WorkflowRunnableStatus.STARTED;
                 log.info("workflowStatue changed to :{}", workflowRunnableStatus);
             }
@@ -734,6 +735,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             log.error("Start workflow error", e);
             return WorkflowStartStatus.FAILED;
         } finally {
+            //上下文线程池中清除
             LogUtils.removeWorkflowInstanceIdMDC();
         }
     }
@@ -2213,7 +2215,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             }
         }
     }
-
+    // 给Runnable设计一个状态枚举
     private enum WorkflowRunnableStatus {
         CREATED, INITIALIZE_QUEUE, STARTED,
         ;

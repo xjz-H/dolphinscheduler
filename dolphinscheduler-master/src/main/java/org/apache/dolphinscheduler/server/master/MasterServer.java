@@ -97,10 +97,10 @@ public class MasterServer implements IStoppable {
         // self tolerant
         this.masterRegistryClient.start();
         this.masterRegistryClient.setRegistryStoppable(this);
-        // 扫描command命令，启用调度线程确保只有一个线程来启动调度器
+        // 扫描command命令的后湖线程，启用调度线程确保只有一个线程来启动调度器
         // start master scheduler
         this.masterSchedulerBootstrap.start();
-
+        //q:
         this.eventExecuteService.start();
         this.failoverExecuteThread.start();
 

@@ -23,10 +23,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
+
+/**
+ * 消费command 生成的事件会放在这个队列里面
+ */
 @Component
 @Slf4j
 public class WorkflowEventQueue {
 
+   // 事件队列 ，是静态的是类共享的，所以其他bean注入的WorkflowEventQueue bean 虽然是队列，但是是同一个队列
     private static final LinkedBlockingQueue<WorkflowEvent> workflowEventQueue = new LinkedBlockingQueue<>();
 
     /**
@@ -41,6 +46,7 @@ public class WorkflowEventQueue {
      * Pool the head of the workflow event queue and wait an workflow event.
      */
     public WorkflowEvent poolEvent() throws InterruptedException {
+        //LinkedBlockingQueue 是无锁机制cas实现的链式队列，take 方法会获取队列头部的元素，并出队，如果队列元素为空会阻塞直到队列中有元素
         return workflowEventQueue.take();
     }
 

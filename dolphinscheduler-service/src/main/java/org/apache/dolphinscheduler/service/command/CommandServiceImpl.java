@@ -113,7 +113,7 @@ public class CommandServiceImpl implements CommandService {
         if (masterCount <= 0) {
             return Lists.newArrayList();
         }
-        // 中文注释：查询命令分页
+        //中文注释：查询命令分页，为什么只传入pageSize, limit pageSize   因为这个数据从数据库中查询出来，消费完就删掉了
         return commandMapper.queryCommandPageBySlot(pageSize, masterCount, thisMasterSlot);
     }
 

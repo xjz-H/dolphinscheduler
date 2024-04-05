@@ -54,6 +54,8 @@ import com.google.common.base.Strings;
 /**
  * Used to execute {@link WorkflowExecuteRunnable}.
  */
+
+//Java的线程池ThreadPoolExecutor
 @Component
 @Slf4j
 public class WorkflowExecuteThreadPool extends ThreadPoolTaskExecutor {
@@ -79,6 +81,7 @@ public class WorkflowExecuteThreadPool extends ThreadPoolTaskExecutor {
     private void init() {
         this.setDaemon(true);
         this.setThreadNamePrefix("WorkflowExecuteThread-");
+        //设置线程池的特征
         this.setMaxPoolSize(masterConfig.getExecThreads());
         this.setCorePoolSize(masterConfig.getExecThreads());
     }
@@ -114,6 +117,7 @@ public class WorkflowExecuteThreadPool extends ThreadPoolTaskExecutor {
             return;
         }
         multiThreadFilterMap.put(workflowInstanceId, workflowExecuteThread);
+        //支持对运行的结果进行监听
         ListenableFuture<?> future = this.submitListenable(workflowExecuteThread::handleEvents);
         future.addCallback(new ListenableFutureCallback() {
 
@@ -124,6 +128,7 @@ public class WorkflowExecuteThreadPool extends ThreadPoolTaskExecutor {
                     log.error("Workflow instance events handle failed", ex);
                     notifyProcessChanged(
                             workflowExecuteThread.getWorkflowExecuteContext().getWorkflowInstance());
+                    //执行失败已经执行的事件，这里是一个重试机制
                     multiThreadFilterMap.remove(workflowInstanceId);
                 } finally {
                     LogUtils.removeWorkflowInstanceIdMDC();
@@ -139,6 +144,7 @@ public class WorkflowExecuteThreadPool extends ThreadPoolTaskExecutor {
                         stateWheelExecuteThread
                                 .removeProcess4TimeoutCheck(workflowExecuteThread.getWorkflowExecuteContext()
                                         .getWorkflowInstance().getId());
+                        //执行成功从消费队列中移除
                         processInstanceExecCacheManager.removeByProcessInstanceId(workflowInstanceId);
                         notifyProcessChanged(
                                 workflowExecuteThread.getWorkflowExecuteContext().getWorkflowInstance());

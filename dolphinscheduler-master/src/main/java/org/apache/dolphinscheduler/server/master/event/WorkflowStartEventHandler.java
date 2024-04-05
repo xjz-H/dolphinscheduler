@@ -43,7 +43,7 @@ public class WorkflowStartEventHandler implements WorkflowEventHandler {
 
     @Autowired
     private StateWheelExecuteThread stateWheelExecuteThread;
-
+    //注册一个spring封装的一个线程池
     @Autowired
     private WorkflowExecuteThreadPool workflowExecuteThreadPool;
 
@@ -60,10 +60,12 @@ public class WorkflowStartEventHandler implements WorkflowEventHandler {
                 workflowExecuteRunnable.getWorkflowExecuteContext().getWorkflowInstance();
         ProcessInstanceMetrics.incProcessInstanceByStateAndProcessDefinitionCode("submit",
                 processInstance.getProcessDefinitionCode().toString());
+        //q: 这段异步执行任务的代码能解释下吗？ ans: 这段代码是异步执行任务的代码，使用CompletableFuture.supplyAsync()方法提交一个任务到线程池中执行，然后在任务执行完成后，根据执行结果进行后续处理。
         CompletableFuture.supplyAsync(workflowExecuteRunnable::call, workflowExecuteThreadPool)
                 .thenAccept(workflowStartStatus -> {
                     if (WorkflowStartStatus.SUCCESS == workflowStartStatus) {
                         log.info("Success submit the workflow instance");
+                        //q: 这行代码的作用？ans: 这行代码的作用是将processInstance对象添加到stateWheelExecuteThread对象中，用于定时检查任务是否超时。
                         if (processInstance.getTimeout() > 0) {
                             stateWheelExecuteThread.addProcess4TimeoutCheck(processInstance);
                         }
@@ -76,6 +78,7 @@ public class WorkflowStartEventHandler implements WorkflowEventHandler {
                                 .type(StateEventType.PROCESS_SUBMIT_FAILED)
                                 .status(WorkflowExecutionStatus.FAILURE)
                                 .build();
+                        //执行失败会添加到stateEvent队列中
                         workflowExecuteRunnable.addStateEvent(stateEvent);
                     }
                 });

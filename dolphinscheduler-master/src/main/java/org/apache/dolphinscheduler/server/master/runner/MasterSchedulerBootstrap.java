@@ -71,7 +71,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
 
     @Autowired
     private WorkflowExecuteRunnableFactory workflowExecuteRunnableFactory;
-
+    //消费完command 生成的待执行的工作流Runable会放在这个队列中
     @Autowired
     private WorkflowEventQueue workflowEventQueue;
 
@@ -94,9 +94,13 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     public synchronized void start() {
         log.info("MasterSchedulerBootstrap starting..");
         //运行该线程的run 方法
-        //  这也是一个值得学习的地方，通过调用父类的start 方法，来启动线程，这样才会真正的运行run 方法
+        //  这也是一个值得学习的地方，通过调用父类的start 方法，来启动线程，这样才会真正的运行run 方法，run方法消费数据库中的command，将事件加入到WorkflowEventQueue 队列中
+        //1、启动扫描command 封装workerFlowEvent到队列中workflowEventLooper
         super.start();
+        //在command扫描线程[run方法中运行]中启动了workflowEventLooper线程用于消费workerFlowEvent。也是一个守护线程用户消费WorkflowEventQueue中事件
+        //2、启动消费workflowEventLooper线程用于消费workerFlowEvent 线程，提交源头任务到任务优先级队列中
         workflowEventLooper.start();
+
         masterTaskExecutorBootstrap.start();
         log.info("MasterSchedulerBootstrap started...");
     }
@@ -163,6 +167,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                                 if (!workflowExecuteRunnableOptional.isPresent()) {
                                     log.warn(
                                             "The command execute success, will not trigger a WorkflowExecuteRunnable, this workflowInstance might be in serial mode");
+                                   //lambda表达式本质上是一个函数
                                     return;
                                 }
                                 WorkflowExecuteRunnable workflowExecuteRunnable = workflowExecuteRunnableOptional.get();
@@ -174,6 +179,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                                 }
                                 //将workflowInstance放入到缓存中
                                 processInstanceExecCacheManager.cache(processInstance.getId(), workflowExecuteRunnable);
+                                //关键的一步，将事件添加到工作流线程队列中
                                 workflowEventQueue.addEvent(
                                         new WorkflowEvent(WorkflowEventType.START_WORKFLOW, processInstance.getId()));
                             } catch (WorkflowCreateException workflowCreateException) {
@@ -187,6 +193,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                 // 恢复中断标志
                 Thread.currentThread().interrupt();
                 break;
+            //把底层其他框架抛出的异常catch住，改写成自己的异常，囊入自己的领域，排查其问题更容易
             } catch (Exception e) {
                 log.error("Master schedule workflow error", e);
                 // sleep for 1s here to avoid the database down cause the exception boom
@@ -195,7 +202,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
         }
     }
 
-
+    //主流程查询数据库是需要catch 住异常的
     private List<Command> findCommands() throws MasterException {
         try {
             //获取当前时间

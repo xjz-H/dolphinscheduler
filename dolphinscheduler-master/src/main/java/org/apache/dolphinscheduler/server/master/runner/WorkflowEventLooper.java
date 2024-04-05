@@ -67,6 +67,7 @@ public class WorkflowEventLooper extends BaseDaemonThread implements AutoCloseab
 
     @Override
     public synchronized void start() {
+        //使用无锁机制启动这消费事件的守护线程
         if (!RUNNING_FLAG.compareAndSet(false, true)) {
             log.error("WorkflowEventLooper thread has already started, will not start again");
             return;
@@ -80,13 +81,16 @@ public class WorkflowEventLooper extends BaseDaemonThread implements AutoCloseab
         WorkflowEvent workflowEvent;
         while (RUNNING_FLAG.get()) {
             try {
+
                 workflowEvent = workflowEventQueue.poolEvent();
+            //take  的阻塞操作可能会被打断
             } catch (InterruptedException e) {
                 log.warn("WorkflowEventLooper thread is interrupted, will close this loop");
                 Thread.currentThread().interrupt();
                 break;
             }
             try {
+                //q：这里为什么要设置workflowInstanceIdMDC？ans: 为了方便日志输出
                 LogUtils.setWorkflowInstanceIdMDC(workflowEvent.getWorkflowInstanceId());
                 log.info("Begin to handle WorkflowEvent: {}", workflowEvent);
                 WorkflowEventHandler workflowEventHandler =
@@ -96,6 +100,7 @@ public class WorkflowEventLooper extends BaseDaemonThread implements AutoCloseab
             } catch (WorkflowEventHandleException workflowEventHandleException) {
                 log.error("Handle workflow event failed, will retry again: {}", workflowEvent,
                         workflowEventHandleException);
+                //消费失败后会重新添加到队列的尾部
                 workflowEventQueue.addEvent(workflowEvent);
                 ThreadUtils.sleep(Constants.SLEEP_TIME_MILLIS);
             } catch (WorkflowEventHandleError workflowEventHandleError) {

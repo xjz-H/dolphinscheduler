@@ -38,6 +38,7 @@ public class DefaultTaskExecuteRunnable extends PriorityTaskExecuteRunnable {
 
     @Override
     public void dispatch() {
+        // 将任务添加到全局的等待队列中
         taskExecuteRunnableOperatorManager.getTaskDispatchOperator(this).operate(this);
     }
 

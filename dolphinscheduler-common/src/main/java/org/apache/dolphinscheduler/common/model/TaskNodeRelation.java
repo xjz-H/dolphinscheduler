@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 /***
  * 任务关系对象，也就是有向无环图的边
  */

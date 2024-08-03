@@ -350,6 +350,7 @@ public class StateWheelExecuteThread extends BaseDaemonThread {
     }
 
     private void addTaskTimeoutEvent(TaskInstance taskInstance) {
+        // 任务状态时间
         TaskStateEvent stateEvent = TaskStateEvent.builder()
                 .processInstanceId(taskInstance.getProcessInstanceId())
                 .taskInstanceId(taskInstance.getId())

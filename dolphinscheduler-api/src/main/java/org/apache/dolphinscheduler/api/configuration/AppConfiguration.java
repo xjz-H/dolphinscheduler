@@ -62,7 +62,7 @@ public class AppConfiguration implements WebMvcConfigurer {
         configSource.registerCorsConfiguration(PATH_PATTERN, config);
         return new CorsFilter(configSource);
     }
-   //添加请求发送给控制器的一个拦截器
+    // 添加请求发送给控制器的一个拦截器
     @Bean
     public LoginHandlerInterceptor loginInterceptor() {
         return new LoginHandlerInterceptor();

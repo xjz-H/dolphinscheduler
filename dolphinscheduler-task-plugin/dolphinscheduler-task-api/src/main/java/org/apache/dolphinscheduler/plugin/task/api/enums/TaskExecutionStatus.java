@@ -30,6 +30,7 @@ public enum TaskExecutionStatus {
     STOP(5, "stop"),
     FAILURE(6, "failure"),
     SUCCESS(7, "success"),
+    // 容错
     NEED_FAULT_TOLERANCE(8, "need fault tolerance"),
     KILL(9, "kill"),
     DELAY_EXECUTION(12, "delay execution"),
@@ -37,9 +38,9 @@ public enum TaskExecutionStatus {
     DISPATCH(17, "dispatch"),
 
     ;
-
+    // 这里是一个巧妙的设计，把枚举的code和其实例通过静态代码块一次初始化到map中，并提供静态方法of（静态工厂模式来进行获取）
     private static final Map<Integer, TaskExecutionStatus> CODE_MAP = new HashMap<>();
-
+    // 进行一次初始化时间复杂度是O(n)
     static {
         for (TaskExecutionStatus executionStatus : TaskExecutionStatus.values()) {
             CODE_MAP.put(executionStatus.getCode(), executionStatus);
@@ -48,6 +49,21 @@ public enum TaskExecutionStatus {
 
     /**
      * Get <code>TaskExecutionStatus</code> by code, if the code is invalidated will throw {@link IllegalArgumentException}.
+     */
+    // 这是一个值得学习的设计。
+
+    /***
+     *在 Java 中，通常情况下，of 方法的语义是用于创建一个新的对象实例，通常是一个不可变的对象，
+     * 且该方法用于接受一些参数来初始化对象的状态。这种设计模式通常被称为静态工厂方法或者静态工厂模式。
+     * 常见的使用场景包括：
+     *
+     * 1、构建不可变对象：of 方法通常被用来创建不可变对象，即对象的状态在创建后不可修改。
+     *
+     * 2、参数校验：of 方法通常会对传入的参数进行校验，以确保创建的对象状态是有效的。
+     *
+     * 3、简化对象创建：通过使用of 方法，可以在不直接调用构造函数的情况下创建对象，提供了更加简洁的方式。
+     *
+     *of 强调的是创建一个不可变的对象
      */
     public static TaskExecutionStatus of(int code) {
         TaskExecutionStatus taskExecutionStatus = CODE_MAP.get(code);
@@ -85,7 +101,7 @@ public enum TaskExecutionStatus {
     public boolean isStop() {
         return this == TaskExecutionStatus.STOP;
     }
-
+    // finished状态有：成功，杀死，失败，暂停，停止，强制成功
     public boolean isFinished() {
         return isSuccess() || isKill() || isFailure() || isPause() || isStop() || isForceSuccess();
     }

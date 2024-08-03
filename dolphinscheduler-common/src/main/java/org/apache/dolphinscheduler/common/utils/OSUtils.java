@@ -65,7 +65,7 @@ public class OSUtils {
 
     private static final HardwareAbstractionLayer hal = SI.getHardware();
     private static long[] prevTicks = new long[CentralProcessor.TickType.values().length];
-    private static long /**/prevTickTime = 0L;
+    private static long /**/ prevTickTime = 0L;
     private static volatile double cpuUsage = 0.0D;
     private static final double TOTAL_MEMORY = hal.getMemory().getTotal() / 1024.0 / 1024 / 1024;
 

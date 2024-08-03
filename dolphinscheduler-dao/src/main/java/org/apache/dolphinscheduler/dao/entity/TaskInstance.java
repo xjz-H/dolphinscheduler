@@ -76,7 +76,7 @@ public class TaskInstance implements Serializable {
     private String processInstanceName;
 
     private Long projectCode;
-
+    // 任务定义的code
     private long taskCode;
 
     private int taskDefinitionVersion;
@@ -145,12 +145,16 @@ public class TaskInstance implements Serializable {
     /**
      * process instance
      */
+    /***
+     * @TableField(exist = false) 是 MyBatis-Plus 框架中的注解，用于标识实体类中的某个字段在数据库表中不存在，即不映射到数据库表的字段。
+     */
     @TableField(exist = false)
     private ProcessInstance processInstance;
 
     /**
      * process definition
      */
+    // 该实体不是数据库中的字段
     @TableField(exist = false)
     private ProcessDefinition processDefine;
 
@@ -173,6 +177,7 @@ public class TaskInstance implements Serializable {
     /**
      * flag
      */
+    // 0 不可用，1可用
     private Flag flag;
 
     /**
@@ -392,6 +397,7 @@ public class TaskInstance implements Serializable {
         if (this.getState() == TaskExecutionStatus.NEED_FAULT_TOLERANCE) {
             return true;
         }
+        // 失败的任务如果有配置重试次数，就是可以重试的
         return this.getState() == TaskExecutionStatus.FAILURE && (this.getRetryTimes() < this.getMaxRetryTimes());
     }
 
@@ -409,8 +415,7 @@ public class TaskInstance implements Serializable {
         }
         Date now = new Date();
         long failedTimeInterval = DateUtils.differSec(now, getEndTime());
-        // task retry does not over time, return false
+        // task retry does not over time, return false,
         return getRetryInterval() * SEC_2_MINUTES_TIME_UNIT < failedTimeInterval;
     }
-
 }

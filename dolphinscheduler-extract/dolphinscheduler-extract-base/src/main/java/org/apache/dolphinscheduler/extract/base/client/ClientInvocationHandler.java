@@ -50,6 +50,7 @@ public class ClientInvocationHandler implements InvocationHandler {
         if (method.getAnnotation(RpcMethod.class) == null) {
             return method.invoke(proxy, args);
         }
+        // 如果是远程调用的方法，method.toGenericString() 更加详细的方法信息
         ClientMethodInvoker methodInvoker = methodInvokerMap.computeIfAbsent(
                 method.toGenericString(), m -> new SyncClientMethodInvoker(serverHost, method, nettyRemotingClient));
         return methodInvoker.invoke(proxy, method, args);

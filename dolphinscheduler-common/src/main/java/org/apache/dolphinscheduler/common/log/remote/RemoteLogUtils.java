@@ -52,12 +52,12 @@ public class RemoteLogUtils {
             remoteLogService.asyncSendRemoteLog(logPath);
         }
     }
-
+    // 单例对象-> 多个单例对象组装一个工厂-> 工具类在使用这个工厂来获取单例对象实现日志的读取和写入
     public static void getRemoteLog(String logPath) {
         if (isRemoteLoggingEnable()) {
             log.info("Start to get log {} from remote target {}", logPath,
                     PropertyUtils.getString(Constants.REMOTE_LOGGING_TARGET));
-
+            // 本地创建目录
             mkdirOfLog(logPath);
             RemoteLogHandler remoteLogHandler = RemoteLogHandlerFactory.getRemoteLogHandler();
             if (remoteLogHandler == null) {

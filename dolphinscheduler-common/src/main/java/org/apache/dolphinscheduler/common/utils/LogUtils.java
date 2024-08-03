@@ -44,17 +44,23 @@ public class LogUtils {
 
     public static byte[] getFileContentBytesFromLocal(String filePath) {
         try (
+                // 从文件输入流中读取文件，每次读取1024字节到字节数组中，再通过字节数组写入到字节数组输入流中。再转化为字节数组
                 InputStream in = new FileInputStream(filePath);
+                // 字节数组输出流
                 ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            // 分批的写入字节数组输出流中
             byte[] buf = new byte[1024];
             int len;
             while ((len = in.read(buf)) != -1) {
+                // buf 要写入的字节数组，off=0 从字节数组的0位置写入，写入的长度是len
                 bos.write(buf, 0, len);
             }
+            // 再从字节数组输出流中写入到字节数组中
             return bos.toByteArray();
         } catch (IOException e) {
             log.error("get file bytes error", e);
         }
+        // 避免空指针异常的一个好的返回设计
         return new byte[0];
     }
 
@@ -101,9 +107,11 @@ public class LogUtils {
                                                    int skipLine,
                                                    int limit) {
         File file = new File(filePath);
+        // 本地存在就先从本地获取
         if (file.exists()) {
             return readPartFileContentFromLocal(filePath, skipLine, limit);
         }
+        // 本地不存在且远程获取日志的开关开启了，就从远程获取，开关在配置文件中配置
         if (RemoteLogUtils.isRemoteLoggingEnable()) {
             return readPartFileContentFromRemote(filePath, skipLine, limit);
         }
@@ -139,13 +147,13 @@ public class LogUtils {
         }
         return readWholeFileContentFromLocal(filePath);
     }
-
+    // 可以保证返回的日志内容不会超过设定的最大值，避免返回过大的日志内容给性能或网络传输带来负担
     public static String rollViewLogLines(List<String> lines) {
         StringBuilder builder = new StringBuilder();
         final int MaxResponseLogSize = 65535;
         int totalLogByteSize = 0;
         for (String line : lines) {
-            // If a single line of log is exceed max response size, cut off the line
+            // If a single line of log is exceed max response size, cut off the line 并加入提示信息
             final int lineByteSize = line.getBytes(StandardCharsets.UTF_8).length;
             if (lineByteSize >= MaxResponseLogSize) {
                 builder.append(line, 0, MaxResponseLogSize)

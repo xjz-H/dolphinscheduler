@@ -76,7 +76,7 @@ public class EventExecuteService extends BaseDaemonThread {
     }
 
     private void workflowEventHandler() {
-        //从缓存中获取所有的待执行的工作流实例
+        // 从缓存中获取所有的待执行的工作流实例
         for (WorkflowExecuteRunnable workflowExecuteThread : this.processInstanceExecCacheManager.getAll()) {
             try {
                 LogUtils.setWorkflowInstanceIdMDC(

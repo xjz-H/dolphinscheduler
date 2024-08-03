@@ -26,10 +26,12 @@ public interface IWorkflowExecuteRunnable extends Callable<WorkflowStartStatus> 
      * 通过默认方法的方式重写了 Callable 接口中的 call 方法
      * 将 call 方法的实现委托给了 startWorkflow 方法，这样在实现 IWorkflowExecuteRunnable 接口时，只需要实现 startWorkflow 方法即可。
      */
-    //Callable的call 方法可能会抛出异常，在使用future 对象的get 的方法时可能会抛出异常
-   //这里有一个知识点是值得学习的，我们实现接口的方法时，声明的异常，可以在实现的方法中继续声明，或者声明子异常，也可以不声明，直接吞掉
+    // Callable的call 方法可能会抛出异常，在使用future 对象的get 的方法时可能会抛出异常
+    // 这里有一个知识点是值得学习的，我们实现接口的方法时，声明的异常，可以在实现的方法中继续声明，或者声明子异常，也可以不声明，直接吞掉
+
+    // 接口继承一个接口并用默认方法去实现
     @Override
-    default WorkflowStartStatus call(){
+    default WorkflowStartStatus call() {
         return startWorkflow();
     }
 

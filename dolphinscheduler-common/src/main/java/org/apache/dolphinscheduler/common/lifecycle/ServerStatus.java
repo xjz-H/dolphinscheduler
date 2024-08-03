@@ -29,7 +29,7 @@ public enum ServerStatus {
 
     private final int code;
     private final String desc;
-   //enumd的构造方法默认是私有的
+    // enumd的构造方法默认是私有的
     ServerStatus(int code, String desc) {
         this.code = code;
         this.desc = desc;

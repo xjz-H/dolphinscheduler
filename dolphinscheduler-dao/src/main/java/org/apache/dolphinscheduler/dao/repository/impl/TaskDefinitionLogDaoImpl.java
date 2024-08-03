@@ -79,8 +79,8 @@ public class TaskDefinitionLogDaoImpl extends BaseDao<TaskDefinitionLog, TaskDef
         if (CollectionUtils.isEmpty(taskDefinitionSet)) {
             return Collections.emptyList();
         }
-        //q: t_ds_task_definition_log 该表在海豚调度器中的作用？ a: 该表用于记录任务定义的日志
-        //q: 为什么不直接查询t_ds_task_definition表 而查询t_ds_task_definition_log表？ a: 该表用于记录任务定义的日志
+        // q: t_ds_task_definition_log 该表在海豚调度器中的作用？ a: 该表用于记录任务定义的日志
+        // q: 为什么不直接查询t_ds_task_definition表 而查询t_ds_task_definition_log表？ a: 该表用于记录任务定义的日志
         return mybatisMapper.queryByTaskDefinitions(taskDefinitionSet);
     }
 

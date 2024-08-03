@@ -27,7 +27,7 @@ import java.util.ServiceLoader;
 public class StateEventHandlerManager {
 
     private static final Map<StateEventType, StateEventHandler> stateEventHandlerMap = new HashMap<>();
-    //写在静态代码块中来初始化stateEventHandlerMap 是线程安全的
+    // 写在静态代码块中来初始化stateEventHandlerMap 是线程安全的
     static {
         ServiceLoader.load(StateEventHandler.class)
                 .forEach(stateEventHandler -> stateEventHandlerMap.put(stateEventHandler.getEventType(),

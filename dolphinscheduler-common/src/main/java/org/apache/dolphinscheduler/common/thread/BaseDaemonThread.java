@@ -27,16 +27,16 @@ package org.apache.dolphinscheduler.common.thread;
 public abstract class BaseDaemonThread extends Thread {
 
     protected BaseDaemonThread(Runnable runnable) {
-        //调用父类的构造方法
+        // 调用父类的构造方法
         super(runnable);
-        //把所有继承该类的线程都设置成了守护线程
+        // 把所有继承该类的线程都设置成了守护线程
         this.setDaemon(true);
     }
 
     protected BaseDaemonThread(String threadName) {
         super();
         this.setName(threadName);
-        //把所有继承该类的线程都设置成了守护线程
+        // 把所有继承该类的线程都设置成了守护线程
         this.setDaemon(true);
     }
 

@@ -39,7 +39,7 @@ public class TaskStateEventHandler implements StateEventHandler {
         TaskStateEvent taskStateEvent = (TaskStateEvent) stateEvent;
         measureTaskState(taskStateEvent);
         workflowExecuteRunnable.checkTaskInstanceByStateEvent(taskStateEvent);
-
+        // 日志先写入到本地文件，把本地文件记录到TaskInstance实例中，在任务完成后，把日志发送到远程的oss 中
         Optional<TaskInstance> taskInstanceOptional =
                 workflowExecuteRunnable.getTaskInstance(taskStateEvent.getTaskInstanceId());
 

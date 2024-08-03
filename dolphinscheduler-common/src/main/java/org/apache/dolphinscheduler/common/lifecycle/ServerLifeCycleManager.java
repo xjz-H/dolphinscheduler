@@ -23,7 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @UtilityClass
 public class ServerLifeCycleManager {
-    //@UtilityClass 表名是一个静态工具类，会自动生成一个私有的构造器防止实例化出对象，里面的方法都是静态方法
+
+    // @UtilityClass 表名是一个静态工具类，会自动生成一个私有的构造器防止实例化出对象，里面的方法都是静态方法
     private static volatile ServerStatus serverStatus = ServerStatus.RUNNING;
 
     private static long serverStartupTime = System.currentTimeMillis();

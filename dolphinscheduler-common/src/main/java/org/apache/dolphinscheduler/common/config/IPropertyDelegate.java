@@ -64,7 +64,6 @@ public interface IPropertyDelegate {
     default Boolean getBoolean(String key, Boolean defaultValue) {
         return get(key, Boolean::parseBoolean, defaultValue);
     }
-
     default <T> T get(String key, Function<String, T> transformFunction) {
         String value = get(key);
         if (value == null) {

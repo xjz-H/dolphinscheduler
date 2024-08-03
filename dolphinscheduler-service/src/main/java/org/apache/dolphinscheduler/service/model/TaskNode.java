@@ -455,10 +455,10 @@ public class TaskNode {
     }
 
     public Map<String, Object> taskParamsToJsonObj(String taskParams) {
-        //将String转换为Map
+        // 将String转换为Map
         Map<String, Object> taskParamsMap = JSONUtils.parseObject(taskParams, new TypeReference<Map<String, Object>>() {
         });
-        //好的习惯避免返回一个null
+        // 好的习惯避免返回一个null
         if (taskParamsMap == null) {
             taskParamsMap = new HashMap<>();
         }

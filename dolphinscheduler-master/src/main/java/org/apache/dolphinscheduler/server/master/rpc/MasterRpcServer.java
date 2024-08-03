@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
+//MasterRpcServer 继承SpringServerMethodInvokerDiscovery 就变成了一个添加了后置处理器的bean
 @Component
 @Slf4j
 public class MasterRpcServer extends SpringServerMethodInvokerDiscovery implements AutoCloseable {

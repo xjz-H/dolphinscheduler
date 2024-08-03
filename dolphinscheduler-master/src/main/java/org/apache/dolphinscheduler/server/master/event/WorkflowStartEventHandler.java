@@ -43,29 +43,36 @@ public class WorkflowStartEventHandler implements WorkflowEventHandler {
 
     @Autowired
     private StateWheelExecuteThread stateWheelExecuteThread;
-    //注册一个spring封装的一个线程池
+    // 注册一个spring封装的一个线程池
+    // 工作流执行的一个线程池
     @Autowired
     private WorkflowExecuteThreadPool workflowExecuteThreadPool;
-
+    // 对接口重写的关于方法声明的异常，只要不破坏父类的约定，子类声明的异常个数和范围都是父类的子类，一句话就是比父类约定的要小
     @Override
     public void handleWorkflowEvent(final WorkflowEvent workflowEvent) throws WorkflowEventHandleError {
         log.info("Handle workflow start event, begin to start a workflow, event: {}", workflowEvent);
+        // master 有一个现成消费command 生成对应的WorkflowExecuteRunnable 推到缓存和队列中，这里从队列中拿到对应的事件再从缓存中拿到数据
+        // 从缓存中获取对应的工作流执行的runnable
         WorkflowExecuteRunnable workflowExecuteRunnable = processInstanceExecCacheManager.getByProcessInstanceId(
                 workflowEvent.getWorkflowInstanceId());
+        // 该工作流其实没有transfer
         if (workflowExecuteRunnable == null) {
             throw new WorkflowEventHandleError(
                     "The workflow start event is invalid, cannot find the workflow instance from cache");
         }
+        // 先生成工作流实例，再生成任务实例
         ProcessInstance processInstance =
                 workflowExecuteRunnable.getWorkflowExecuteContext().getWorkflowInstance();
         ProcessInstanceMetrics.incProcessInstanceByStateAndProcessDefinitionCode("submit",
                 processInstance.getProcessDefinitionCode().toString());
-        //q: 这段异步执行任务的代码能解释下吗？ ans: 这段代码是异步执行任务的代码，使用CompletableFuture.supplyAsync()方法提交一个任务到线程池中执行，然后在任务执行完成后，根据执行结果进行后续处理。
+        /***
+         *  异步执行Runnable
+         */
         CompletableFuture.supplyAsync(workflowExecuteRunnable::call, workflowExecuteThreadPool)
                 .thenAccept(workflowStartStatus -> {
                     if (WorkflowStartStatus.SUCCESS == workflowStartStatus) {
                         log.info("Success submit the workflow instance");
-                        //q: 这行代码的作用？ans: 这行代码的作用是将processInstance对象添加到stateWheelExecuteThread对象中，用于定时检查任务是否超时。
+                        // q: 这行代码的作用？ans: 这行代码的作用是将processInstance对象添加到stateWheelExecuteThread对象中，用于定时检查任务是否超时。
                         if (processInstance.getTimeout() > 0) {
                             stateWheelExecuteThread.addProcess4TimeoutCheck(processInstance);
                         }
@@ -78,7 +85,7 @@ public class WorkflowStartEventHandler implements WorkflowEventHandler {
                                 .type(StateEventType.PROCESS_SUBMIT_FAILED)
                                 .status(WorkflowExecutionStatus.FAILURE)
                                 .build();
-                        //执行失败会添加到stateEvent队列中
+                        // 执行失败会添加到stateEvent队列中 状态事件，提交一个工作流事件失败会增加一个状态事件
                         workflowExecuteRunnable.addStateEvent(stateEvent);
                     }
                 });

@@ -31,7 +31,9 @@ public class RemoteLogHandlerFactory {
         if (!RemoteLogUtils.isRemoteLoggingEnable()) {
             return null;
         }
-
+        /***
+         * 每个handler 都写了一个静态的单例方法
+         */
         String target = PropertyUtils.getUpperCaseString(Constants.REMOTE_LOGGING_TARGET);
         if ("OSS".equals(target)) {
             return OssRemoteLogHandler.getInstance();

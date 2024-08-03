@@ -45,7 +45,15 @@ public class PeerTaskInstancePriorityQueue implements TaskPriorityQueue<TaskInst
     /**
      * queue
      */
+    /***
+     * PriorityQueue 是一个基于优先级堆的无界优先级队列。在 PriorityQueue 中，元素按照它们的自然顺序或者通过构造时提供的 Comparator 进行排序。
+     * 优先级队列中的元素不是按照插入顺序进行访问，而是按照它们的优先级顺序进行访问。
+     *
+     * poll() 方法是 PriorityQueue 类中用于获取并移除队列中具有最高优先级的元素的方法。
+     * 该方法会返回队列中具有最高优先级的元素，并将它从队列中移除。如果队列为空，poll() 方法会返回 null。
+     */
     private final PriorityQueue<TaskInstance> queue = new PriorityQueue<>(QUEUE_MAX_SIZE, new TaskInfoComparator());
+    // 创建一个同步的set 集合
     private final Set<String> taskInstanceIdentifySet = Collections.synchronizedSet(new HashSet<>());
 
     /**
@@ -68,6 +76,7 @@ public class PeerTaskInstancePriorityQueue implements TaskPriorityQueue<TaskInst
      */
     @Override
     public TaskInstance take() throws TaskPriorityQueueException {
+
         TaskInstance taskInstance = queue.poll();
         if (taskInstance != null) {
             taskInstanceIdentifySet.remove(getTaskInstanceIdentify(taskInstance));
@@ -99,6 +108,7 @@ public class PeerTaskInstancePriorityQueue implements TaskPriorityQueue<TaskInst
      * @return task instance
      */
     public TaskInstance peek() {
+        // 该方法会返回队列中的头部元素，如果队列为空则返回 null。
         return queue.peek();
     }
 
@@ -165,6 +175,10 @@ public class PeerTaskInstancePriorityQueue implements TaskPriorityQueue<TaskInst
     /**
      * TaskInfoComparator
      */
+    /***
+     * 私有的静态内部类是在外部类中定义的静态内部类，且被声明为私有的，即只有外部类可以访问该内部类。
+     * 其他类无法直接访问私有的静态内部类，这使得私有的静态内部类对外部世界具有封装性，可以隐藏实现细节。
+     */
     private static class TaskInfoComparator implements Comparator<TaskInstance> {
 
         /**
@@ -180,6 +194,10 @@ public class PeerTaskInstancePriorityQueue implements TaskPriorityQueue<TaskInst
                 // larger number, higher priority
                 return Constants.OPPOSITE_VALUE * Integer.compare(o1.getTaskGroupPriority(), o2.getTaskGroupPriority());
             }
+            // q: compareTo 方法来自哪里？
+            /***
+             * Priority 是一个枚举类，所有的枚举类其实都继承了java.lang 下的抽象类Enum
+             */
             return o1.getTaskInstancePriority().compareTo(o2.getTaskInstancePriority());
         }
     }

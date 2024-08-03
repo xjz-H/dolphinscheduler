@@ -46,7 +46,8 @@ public class OssRemoteLogHandler implements RemoteLogHandler, Closeable {
     private OssRemoteLogHandler() {
 
     }
-
+    // 一个简单的单例模式，直接在静态方法上加上synchronized ，遵循happens-before规则，解锁之前的操作对后序的加锁可见。整个方法加同步控制，instance 不需要加volatile
+    // 加上这个类没有其他的地方提供获取instance 字段。所以不需要加volatile
     public static synchronized OssRemoteLogHandler getInstance() {
         if (instance == null) {
             instance = new OssRemoteLogHandler();
@@ -85,6 +86,7 @@ public class OssRemoteLogHandler implements RemoteLogHandler, Closeable {
 
         try {
             log.info("get remote log on OSS {} to {}", objectName, logPath);
+            // 把远程oss对象的远程对象写入到本地文件
             ossClient.getObject(new GetObjectRequest(bucketName, objectName), new File(logPath));
         } catch (Exception e) {
             log.error("error while getting remote log on OSS {} to {}", objectName, logPath, e);

@@ -17,6 +17,7 @@
 
 package org.apache.dolphinscheduler.server.master.event;
 
+//工作流时间类型的枚举
 public enum WorkflowEventType {
 
     START_WORKFLOW,

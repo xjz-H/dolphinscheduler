@@ -24,6 +24,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class WorkflowEvent {
 
+    // 定义一个workflowEven事件的枚举类型
     private WorkflowEventType workflowEventType;
 
     private int workflowInstanceId;

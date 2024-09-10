@@ -57,6 +57,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCloseable {
+
     /**
      * Master scheduler thread, this thread will consume the commands from database and trigger processInstance executed.
      */
@@ -71,7 +72,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
 
     @Autowired
     private WorkflowExecuteRunnableFactory workflowExecuteRunnableFactory;
-    //消费完command 生成的待执行的工作流Runable会放在这个队列中
+    // 消费完command 生成的待执行的工作流Runable会放在这个队列中
     @Autowired
     private WorkflowEventQueue workflowEventQueue;
 
@@ -85,7 +86,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     private MasterTaskExecutorBootstrap masterTaskExecutorBootstrap;
 
     protected MasterSchedulerBootstrap() {
-        //调用父类的构造器，把该线程设置成守护线程，通过继承抽象类的方式来把线程设置成守护线程
+        // 调用父类的构造器，把该线程设置成守护线程，通过继承抽象类的方式来把线程设置成守护线程
         // 这也是一个值得学习的地方，调用父类的构造器，这样子类就拥有了继承过来的父类的属性了
         super("MasterCommandLoopThread");
     }
@@ -93,18 +94,20 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     @Override
     public synchronized void start() {
         log.info("MasterSchedulerBootstrap starting..");
-        //运行该线程的run 方法
-        //  这也是一个值得学习的地方，通过调用父类的start 方法，来启动线程，这样才会真正的运行run 方法，run方法消费数据库中的command，将事件加入到WorkflowEventQueue 队列中
-        //1、启动扫描command 封装workerFlowEvent到队列中workflowEventLooper
+        // 运行该线程的run 方法
+        // 这也是一个值得学习的地方，通过调用父类的start 方法，来启动线程，这样才会真正的运行run 方法，run方法消费数据库中的command，将事件加入到WorkflowEventQueue 队列中
+        // 1、启动扫描command 封装workerFlowEvent到队列中workflowEventLooper
         super.start();
-        //在command扫描线程[run方法中运行]中启动了workflowEventLooper线程用于消费workerFlowEvent。也是一个守护线程用户消费WorkflowEventQueue中事件
-        //2、启动消费workflowEventLooper线程用于消费workerFlowEvent 线程，提交源头任务到任务优先级队列中
+        // 在command扫描线程[run方法中运行]中启动了workflowEventLooper线程用于消费workerFlowEvent。也是一个守护线程用户消费WorkflowEventQueue中事件
+        // 2、启动消费workflowEventLooper线程用于消费workerFlowEvent 线程，提交源头任务到任务优先级队列中
+        // 这里是一个值得学习的地方，workflowEventLooper是一个守护线程，并重写了start方法，这个start方法的调用就相当于我们平时启动一个线程一样，一般start方法中再去调用父类的start方法，会去调用我们重写的run方法
+        // 将任务添加到全局的等待队列中
         workflowEventLooper.start();
-
+        // 从全局的任务等待队列中消费任务
         masterTaskExecutorBootstrap.start();
         log.info("MasterSchedulerBootstrap started...");
     }
-    // q:  实现了AutoCloseable 接口的close 方法有什么作用？   通过实现AutoCloseable 接口，可以在try-with-resources 语句中使用
+    // q: 实现了AutoCloseable 接口的close 方法有什么作用？ 通过实现AutoCloseable 接口，可以在try-with-resources 语句中使用
     @Override
     public void close() throws Exception {
         log.info("MasterSchedulerBootstrap stopping...");
@@ -133,12 +136,11 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
      * 10. 如果出现异常，则休眠1s
      *
      */
-    //消费command 创建工作流实例
     @Override
     public void run() {
         while (!ServerLifeCycleManager.isStopped()) {
             try {
-                //如果服务不是运行状态需要休眠1s
+                // 如果服务不是运行状态需要休眠1s
                 if (!ServerLifeCycleManager.isRunning()) {
                     // the current server is not at running status, cannot consume command.
                     log.warn("The current server is not at running status, cannot consumes commands.");
@@ -160,7 +162,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                     continue;
                 }
                 // 这也是一个值得学习的地方，通过并行流的方式来处理command，加快处理速度
-                //这是调度器的核心逻辑，通过并行流的方式来消费command，生产数据
+                // 这是调度器的核心逻辑，通过并行流的方式来消费command，生产数据
                 commands.parallelStream()
                         .forEach(command -> {
                             try {
@@ -179,9 +181,9 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                                     log.error(
                                             "The workflow instance is already been cached, this case shouldn't be happened");
                                 }
-                                //将workflowInstance放入到缓存中,如果已经存在就会更新为新的
+                                // 将workflowInstance放入到缓存中
                                 processInstanceExecCacheManager.cache(processInstance.getId(), workflowExecuteRunnable);
-                                //关键的一步，将事件添加到工作流线程队列中
+                                // 关键的一步，将事件添加到工作流线程队列中
                                 workflowEventQueue.addEvent(
                                         new WorkflowEvent(WorkflowEventType.START_WORKFLOW, processInstance.getId()));
                             } catch (WorkflowCreateException workflowCreateException) {
@@ -195,7 +197,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                 // 恢复中断标志
                 Thread.currentThread().interrupt();
                 break;
-            //把底层其他框架抛出的异常catch住，改写成自己的异常，囊入自己的领域，排查其问题更容易
+                // 把底层其他框架抛出的异常catch住，改写成自己的异常，囊入自己的领域，排查其问题更容易
             } catch (Exception e) {
                 log.error("Master schedule workflow error", e);
                 // sleep for 1s here to avoid the database down cause the exception boom
@@ -204,14 +206,14 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
         }
     }
 
-    //主流程查询数据库是需要catch 住异常的
+    // 主流程查询数据库是需要catch 住异常的
     private List<Command> findCommands() throws MasterException {
         try {
-            //获取当前时间
+            // 获取当前时间
             long scheduleStartTime = System.currentTimeMillis();
-            //获取当前的slot
+            // 获取当前的slot
             int thisMasterSlot = masterSlotManager.getSlot();
-            //获取master的数量
+            // 获取master的数量
             int masterCount = masterSlotManager.getMasterSize();
             /***
              * 如果master的数量小于等于0，则返回空集合
@@ -221,10 +223,10 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                 // 这是一个很好的习惯。如果返回的集合是空的，那么就返回一个空的集合，而不是null。
                 return Collections.emptyList();
             }
-            //获取每次从数据库中获取command的数量
+            // 获取每次从数据库中获取command的数量
             int pageSize = masterConfig.getFetchCommandNum();
-            //  每台shceduler 实例根据自己的槽位来获取自己的command,并且采用分页查询
-            //q 这里返回值写成final有什么好处？
+            // 每台shceduler 实例根据自己的槽位来获取自己的command,并且采用分页查询
+            // q 这里返回值写成final有什么好处？
             final List<Command> result =
                     commandService.findCommandPageBySlot(pageSize, masterCount, thisMasterSlot);
             /***

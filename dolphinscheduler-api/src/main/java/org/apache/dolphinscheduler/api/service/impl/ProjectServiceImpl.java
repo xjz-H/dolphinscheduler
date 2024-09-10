@@ -102,7 +102,7 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
     @Transactional
     public Result createProject(User loginUser, String name, String desc) {
         Result result = new Result();
-        //检查项目描述是否合理，不能为空，Unicode码长度不能超过255，值得学习的地方，检查方法直接设置成静态的
+        // 检查项目描述是否合理，不能为空，Unicode码长度不能超过255，值得学习的地方，检查方法直接设置成静态的
         checkDesc(result, desc);
         if (result.getCode() != Status.SUCCESS.getCode()) {
             return result;

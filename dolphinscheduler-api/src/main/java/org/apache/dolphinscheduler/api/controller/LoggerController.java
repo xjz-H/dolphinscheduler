@@ -49,6 +49,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 /**
  * logger controller
  */
+
+/***
+ * @RestController 是@Controller和@Response的结合，直接返回json格式或者xml格式的数据，而不是返回视图
+ */
 @Tag(name = "LOGGER_TAG")
 @RestController
 @RequestMapping("/log")

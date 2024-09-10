@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.google.auto.service.AutoService;
 
-
 @AutoService(StateEventHandler.class)
 @Slf4j
 public class TaskRetryStateEventHandler implements StateEventHandler {

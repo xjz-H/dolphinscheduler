@@ -118,6 +118,7 @@ public class JdkDynamicServerHandler extends ChannelInboundHandlerAdapter {
                 TransporterHeader transporterHeader =
                         TransporterHeader.of(transporter.getHeader().getOpaque(), methodIdentifier);
                 Transporter response = Transporter.of(transporterHeader, iRpcResponse);
+                // 立刻把channel缓冲区的数据发送过去
                 channel.writeAndFlush(response);
             });
         } catch (RejectedExecutionException e) {

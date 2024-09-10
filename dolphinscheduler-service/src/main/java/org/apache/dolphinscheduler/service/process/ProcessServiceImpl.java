@@ -307,12 +307,12 @@ public class ProcessServiceImpl implements ProcessService {
      * @param command found command
      * @return process instance
      */
-    //消费command 可以使用handle 来命名
+    // 消费command 可以使用handle 来命名
     @Override
     @Transactional
     public @Nullable ProcessInstance handleCommand(String host,
                                                    Command command) throws CronParseException, CodeGenerateException {
-        //根据命令参数和工作流定义来创建一个实例
+        // 根据命令参数和工作流定义来创建一个实例
         ProcessInstance processInstance = constructProcessInstance(command, host);
         // cannot construct process instance, return null
         if (processInstance == null) {
@@ -338,10 +338,10 @@ public class ProcessServiceImpl implements ProcessService {
         } else {
             processInstanceDao.upsertProcessInstance(processInstance);
         }
-        //q:作用？ ans: 保证数据的一致性
+        // q:作用？ ans: 保证数据的一致性
         triggerRelationService.saveProcessInstanceTrigger(command.getId(), processInstance.getId());
         setSubProcessParam(processInstance);
-        //这里创建了是就会把command删除
+        // 这里创建了是就会把command删除
         deleteCommandWithCheck(command.getId());
         return processInstance;
     }
@@ -454,7 +454,7 @@ public class ProcessServiceImpl implements ProcessService {
     public ProcessDefinition findProcessDefinition(Long processDefinitionCode, int version) {
         ProcessDefinition processDefinition = processDefineMapper.queryByCode(processDefinitionCode);
         if (processDefinition == null || processDefinition.getVersion() != version) {
-            //如果版本号不对再根据版本号去库中查询一下
+            // 如果版本号不对再根据版本号去库中查询一下
             processDefinition = processDefineLogMapper.queryByDefinitionCodeAndVersion(processDefinitionCode, version);
             if (processDefinition != null) {
                 processDefinition.setId(0);
@@ -605,7 +605,7 @@ public class ProcessServiceImpl implements ProcessService {
         // the new process instance restart time is null.
         processInstance.setRestartTime(null);
         processInstance.setRunTimes(1);
-        //最大尝试次数默认为0
+        // 最大尝试次数默认为0
         processInstance.setMaxTryTimes(0);
         processInstance.setCommandParam(command.getCommandParam());
         processInstance.setCommandType(command.getCommandType());
@@ -767,7 +767,7 @@ public class ProcessServiceImpl implements ProcessService {
         ProcessInstance processInstance;
         ProcessDefinition processDefinition;
         CommandType commandType = command.getCommandType();
-        //查询工作流定义
+        // 查询工作流定义
         processDefinition =
                 this.findProcessDefinition(command.getProcessDefinitionCode(), command.getProcessDefinitionVersion());
         // 如果过程定义没有找到直接跑出运行时异常
@@ -782,12 +782,12 @@ public class ProcessServiceImpl implements ProcessService {
         }
 
         int processInstanceId = command.getProcessInstanceId();
-        //如果该命令已经实例化了,创建新的实例
+        // 如果该命令已经实例化了,创建新的实例
         if (processInstanceId == 0) {
-            //根据工作流定义和命令创建一个新的工作流实例
+            // 根据工作流定义和命令创建一个新的工作流实例
             processInstance = generateNewProcessInstance(processDefinition, command, cmdParam);
         } else {
-            //命令已经实例化，需要去库中查询出对应的实例信息
+            // 命令已经实例化，需要去库中查询出对应的实例信息
             processInstance = this.findProcessInstanceDetailById(processInstanceId).orElse(null);
             setGlobalParamIfCommanded(processDefinition, cmdParam);
             // 如果返回null， 需要在注解中加以提示
@@ -2159,7 +2159,7 @@ public class ProcessServiceImpl implements ProcessService {
     public DAG<Long, TaskNode, TaskNodeRelation> genDagGraph(ProcessDefinition processDefinition) {
         List<ProcessTaskRelation> taskRelations =
                 this.findRelationByCode(processDefinition.getCode(), processDefinition.getVersion());
-        //TaskNode 对象封装了DAG的任务节点信息 ，并记录了该任务的所有前置节点
+        // TaskNode 对象封装了DAG的任务节点信息 ，并记录了该任务的所有前置节点
         List<TaskNode> taskNodeList = transformTask(taskRelations, Lists.newArrayList());
         ProcessDag processDag = DagHelper.getProcessDag(taskNodeList, new ArrayList<>(taskRelations));
         // Generate concrete Dag to be executed
@@ -2210,10 +2210,10 @@ public class ProcessServiceImpl implements ProcessService {
     @Override
     public List<TaskNode> transformTask(List<ProcessTaskRelation> taskRelationList,
                                         List<TaskDefinitionLog> taskDefinitionLogs) {
-        //taskCodeMap key是所有的后置taskCode，value是所有的前置taskCode
-        //通过遍历DAG的边来获取这个Map
+        // taskCodeMap key是所有的后置taskCode，value是所有的前置taskCode
+        // 通过遍历DAG的边来获取这个Map
         Map<Long, List<Long>> taskCodeMap = new HashMap<>();
-        //q: for 循环在做什么？ a: 生成一个taskCodeMap，key为后置taskCode，value为前置taskCode
+        // q: for 循环在做什么？ a: 生成一个taskCodeMap，key为后置taskCode，value为前置taskCode
         for (ProcessTaskRelation processTaskRelation : taskRelationList) {
             /***
              * q: BiFunction<? super K, ? super V, ? extends V> remappingFunction
@@ -2242,18 +2242,18 @@ public class ProcessServiceImpl implements ProcessService {
                 return v;
             });
         }
-        //如果第一次没有查询出来再查询一次
+        // 如果第一次没有查询出来再查询一次
         if (CollectionUtils.isEmpty(taskDefinitionLogs)) {
             taskDefinitionLogs = taskDefinitionLogDao.queryTaskDefineLogList(taskRelationList);
         }
-        //任务定义的map，key是taskCode，value是TaskDefinitionLog
+        // 任务定义的map，key是taskCode，value是TaskDefinitionLog
         Map<Long, TaskDefinitionLog> taskDefinitionLogMap = taskDefinitionLogs.stream()
                 .collect(Collectors.toMap(TaskDefinitionLog::getCode, taskDefinitionLog -> taskDefinitionLog));
-        //TaskNode 记录了该任务节点的所有前置节点
+        // TaskNode 记录了该任务节点的所有前置节点
         List<TaskNode> taskNodeList = new ArrayList<>();
-        //使用entrySet()方法遍历map 是一个比较好的习惯
+        // 使用entrySet()方法遍历map 是一个比较好的习惯
         for (Entry<Long, List<Long>> code : taskCodeMap.entrySet()) {
-            //获取taskCode对应的TaskDefinitionLog
+            // 获取taskCode对应的TaskDefinitionLog
             TaskDefinitionLog taskDefinitionLog = taskDefinitionLogMap.get(code.getKey());
             if (taskDefinitionLog != null) {
                 TaskNode taskNode = new TaskNode();
@@ -2262,8 +2262,8 @@ public class ProcessServiceImpl implements ProcessService {
                 taskNode.setName(taskDefinitionLog.getName());
                 taskNode.setDesc(taskDefinitionLog.getDescription());
                 taskNode.setType(taskDefinitionLog.getTaskType().toUpperCase());
-                //设置任务的运行标志，如果是YES，就是正常运行，如果是NO，就是禁止运行
-                //值得注意的是枚举是单例，可以直接使用 == 来比较是否相等
+                // 设置任务的运行标志，如果是YES，就是正常运行，如果是NO，就是禁止运行
+                // 值得注意的是枚举是单例，可以直接使用 == 来比较是否相等
                 taskNode.setRunFlag(taskDefinitionLog.getFlag() == Flag.YES ? Constants.FLOWNODE_RUN_FLAG_NORMAL
                         : Constants.FLOWNODE_RUN_FLAG_FORBIDDEN);
                 taskNode.setMaxRetryTimes(taskDefinitionLog.getFailRetryTimes());
@@ -2283,7 +2283,7 @@ public class ProcessServiceImpl implements ProcessService {
                                 taskDefinitionLog.getTimeoutNotifyStrategy(),
                                 taskDefinitionLog.getTimeout())));
                 taskNode.setDelayTime(taskDefinitionLog.getDelayTime());
-                //设置该任务的所有前置节点，前置节点是一个List<String>，存储的是前置节点的taskCode，序列化为一个json字符串
+                // 设置该任务的所有前置节点，前置节点是一个List<String>，存储的是前置节点的taskCode，序列化为一个json字符串
                 taskNode.setPreTasks(JSONUtils.toJsonString(code.getValue().stream().map(taskDefinitionLogMap::get)
                         .map(TaskDefinition::getCode).collect(Collectors.toList())));
                 taskNode.setTaskGroupId(taskDefinitionLog.getTaskGroupId());
@@ -2515,9 +2515,9 @@ public class ProcessServiceImpl implements ProcessService {
                 }
             } while (thisTaskGroupQueue.getForceStart() == Flag.NO.getCode()
                     && taskGroupMapper.releaseTaskGroupResource(taskGroup.getId(),
-                    taskGroup.getUseSize(),
-                    thisTaskGroupQueue.getId(),
-                    TaskGroupQueueStatus.ACQUIRE_SUCCESS.getCode()) != 1);
+                            taskGroup.getUseSize(),
+                            thisTaskGroupQueue.getId(),
+                            TaskGroupQueueStatus.ACQUIRE_SUCCESS.getCode()) != 1);
         } catch (Exception e) {
             log.error("release the task group error", e);
             return null;
@@ -2605,10 +2605,10 @@ public class ProcessServiceImpl implements ProcessService {
     public ProcessInstance loadNextProcess4Serial(long code, int state, int id) {
         return this.processInstanceMapper.loadNextProcess4Serial(code, state, id);
     }
-   // 删除失败直接抛出异常
+    // 删除失败直接抛出异常
     protected void deleteCommandWithCheck(int commandId) {
         int delete = this.commandMapper.deleteById(commandId);
-        //这里删除数据失败直接抛出异常，整个事务回滚，保证了数据的一致性，一个command 只能被实例化一次
+        // 这里删除数据失败直接抛出异常，整个事务回滚，保证了数据的一致性，一个command 只能被实例化一次
         if (delete != 1) {
             throw new ServiceException("delete command fail, id:" + commandId);
         }

@@ -41,6 +41,7 @@ public class ImmutablePriorityPropertyDelegate extends ImmutablePropertyDelegate
 
     @Override
     public String get(String key) {
+        // computeIfAbsent 如果map存在对应的key 就放入到map中，如果不存在就通过计算后 产生的值放入到map中
         Optional<ConfigValue<String>> configValue = configValueMap.computeIfAbsent(key, k -> {
             Optional<ConfigValue<String>> value = getConfigValueFromEnv(key);
             if (value.isPresent()) {
@@ -76,17 +77,27 @@ public class ImmutablePriorityPropertyDelegate extends ImmutablePropertyDelegate
     @Override
     public Set<String> getPropertyKeys() {
         Set<String> propertyKeys = new HashSet<>();
+        // 1、从property 文件中获取值
         propertyKeys.addAll(super.getPropertyKeys());
+        // 2、从jvm系统获取设置的值
         propertyKeys.addAll(System.getProperties().stringPropertyNames());
+        // 3、从操作系统重获取设置的值
         propertyKeys.addAll(System.getenv().keySet());
         return propertyKeys;
     }
 
     private Optional<ConfigValue<String>> getConfigValueFromEnv(String key) {
+        /**
+         * 1、 获取操作系统的环境变量的值
+         * 2、 操作系统环境变量是在操作系统级别设置的变量，可以在系统环境中定义和配置。
+         *
+          */
+
         String value = System.getenv(key);
         if (value != null) {
             return Optional.of(ConfigValue.fromEnv(key, value));
         }
+        // 将.和- 替换成—_ 并转化为大写
         String envVarKey = String.valueOf(key).replaceAll("[.-]", "_").toUpperCase();
         String envVarVal = System.getenv(envVarKey);
         if (envVarVal != null) {
@@ -96,6 +107,12 @@ public class ImmutablePriorityPropertyDelegate extends ImmutablePropertyDelegate
     }
 
     private Optional<ConfigValue<String>> getConfigValueFromJvm(String key) {
+        /***
+         * 1、 这个方法用于获取 Java 系统属性的值
+         * 2、Java 系统属性是由 Java 虚拟机（JVM）或应用程序设置的属性。
+         * 3、Java 系统属性可以通过启动参数（如 -D 参数）、代码中的 System.setProperty(key, value) 方法或其他方式设置。
+         */
+
         String value = System.getProperty(key);
         if (value != null) {
             return Optional.of(ConfigValue.fromJvm(key, value));
@@ -104,6 +121,9 @@ public class ImmutablePriorityPropertyDelegate extends ImmutablePropertyDelegate
     }
 
     private Optional<ConfigValue<String>> getConfigValueFromProperties(String key) {
+        /***
+         * 1、从 property配置文件中获取配置的值
+         */
         String value = super.get(key);
         if (value != null) {
             return Optional.of(ConfigValue.fromProperties(key, value));

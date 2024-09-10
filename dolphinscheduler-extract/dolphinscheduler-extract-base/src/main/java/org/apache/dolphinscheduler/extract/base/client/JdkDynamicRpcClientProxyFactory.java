@@ -37,7 +37,7 @@ import com.google.common.cache.LoadingCache;
 public class JdkDynamicRpcClientProxyFactory implements IRpcClientProxyFactory {
 
     private final NettyRemotingClient nettyRemotingClient;
-
+    // 缓存定位为私有静态的。静态多个独享共享，私有防止不受管控的访问
     private static final LoadingCache<String, Map<String, Object>> proxyClientCache = CacheBuilder.newBuilder()
             // expire here to remove dead host
             .expireAfterAccess(Duration.ofHours(1))
@@ -60,9 +60,13 @@ public class JdkDynamicRpcClientProxyFactory implements IRpcClientProxyFactory {
         return (T) proxyClientCache.get(serverHost)
                 .computeIfAbsent(clientInterface.getName(), key -> newProxyClient(serverHost, clientInterface));
     }
-
+    // ClientInvocationHandler
     @SuppressWarnings("unchecked")
     private <T> T newProxyClient(String serverHost, Class<T> clientInterface) {
+        // 动态代理
+        // 1、加载代理类的类加载器
+        // 2、被代理类的实现的接口数组
+        // 3、 增加逻辑下载InvocationHandler 的invoke方法中
         return (T) Proxy.newProxyInstance(
                 clientInterface.getClassLoader(),
                 new Class[]{clientInterface},

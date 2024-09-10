@@ -22,9 +22,13 @@ import org.apache.dolphinscheduler.extract.alert.request.AlertSendResponse;
 import org.apache.dolphinscheduler.extract.base.RpcMethod;
 import org.apache.dolphinscheduler.extract.base.RpcService;
 
+/***
+ * 第一RpcService接口
+ */
 @RpcService
 public interface IAlertOperator {
 
+    // 接口中定义Rpc方法
     @RpcMethod
     AlertSendResponse sendAlert(AlertSendRequest alertSendRequest);
 

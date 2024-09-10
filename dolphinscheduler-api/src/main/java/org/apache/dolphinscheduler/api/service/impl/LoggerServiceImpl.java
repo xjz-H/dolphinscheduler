@@ -98,13 +98,16 @@ public class LoggerServiceImpl extends BaseServiceImpl implements LoggerService 
     @Override
     @SuppressWarnings("unchecked")
     public Result<ResponseTaskLog> queryLog(User loginUser, int taskInstId, int skipLineNum, int limit) {
-
+        /***
+         *  queryById的形参是一个Serializable 类型，但是传入的实参是一个基本的数据类型int， 这里会做自动的装箱，把int 转化为Integer
+         */
         TaskInstance taskInstance = taskInstanceDao.queryById(taskInstId);
 
         if (taskInstance == null) {
             log.error("Task instance does not exist, taskInstanceId:{}.", taskInstId);
             return Result.error(Status.TASK_INSTANCE_NOT_FOUND);
         }
+        // 任务实例会记录执行该任务的主机的IP
         if (StringUtils.isBlank(taskInstance.getHost())) {
             log.error("Host of task instance is null, taskInstanceId:{}.", taskInstId);
             return Result.error(Status.TASK_INSTANCE_HOST_IS_NULL);
@@ -210,11 +213,14 @@ public class LoggerServiceImpl extends BaseServiceImpl implements LoggerService 
      * @return log string data
      */
     private String queryLog(TaskInstance taskInstance, int skipLineNum, int limit) {
+        // 实例中logPath存储了日志的路径
         final String logPath = taskInstance.getLogPath();
+        // 存储主机ip
         final String host = taskInstance.getHost();
         log.info("Query task instance log, taskInstanceId:{}, taskInstanceName:{}, host: {}, logPath:{}",
                 taskInstance.getId(), taskInstance.getName(), taskInstance.getHost(), logPath);
         StringBuilder sb = new StringBuilder();
+        // 从文件头获取数据，设置头信息
         if (skipLineNum == 0) {
             String head = String.format(LOG_HEAD_FORMAT,
                     logPath,
@@ -224,6 +230,7 @@ public class LoggerServiceImpl extends BaseServiceImpl implements LoggerService 
         }
 
         String logContent = null;
+        // 查询master log
         if (TaskUtils.isLogicTask(taskInstance.getTaskType())) {
             IMasterLogService masterLogService = SingletonJdkDynamicRpcClientProxyFactory
                     .getProxyClient(taskInstance.getHost(), IMasterLogService.class);
@@ -237,6 +244,7 @@ public class LoggerServiceImpl extends BaseServiceImpl implements LoggerService 
                 log.error("Query LogicTaskInstance log error", ex);
             }
         } else {
+            // 查询worker上的日志 返回IWorkerLogService 的代理对象
             IWorkerLogService iWorkerLogService = SingletonJdkDynamicRpcClientProxyFactory
                     .getProxyClient(host, IWorkerLogService.class);
             try {
@@ -281,7 +289,8 @@ public class LoggerServiceImpl extends BaseServiceImpl implements LoggerService 
                 logPath,
                 host,
                 Constants.SYSTEM_LINE_SEPARATOR).getBytes(StandardCharsets.UTF_8);
-
+        // 这是一个好的初始值设计，可以避免空指针。
+        // 先从远程下载到本地文件，自从本地文件分批读取到字节数组输出流，再从字节数组输出流读到字节数组，再通过StringBuilder拼接一些头信息返回回去
         byte[] logBytes = new byte[0];
         if (TaskUtils.isLogicTask(taskInstance.getTaskType())) {
             IMasterLogService masterLogService = SingletonJdkDynamicRpcClientProxyFactory
@@ -313,6 +322,7 @@ public class LoggerServiceImpl extends BaseServiceImpl implements LoggerService 
             // get task log from remote target
             try {
                 log.info("Get log {} from remote target", logPath);
+                // 先把日志从远程写入到本地文件中，再从本地文件中读取到
                 RemoteLogUtils.getRemoteLog(logPath);
                 File logFile = new File(logPath);
                 logBytes = FileUtils.readFileToByteArray(logFile);

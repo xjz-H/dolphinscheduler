@@ -66,9 +66,10 @@ public class WorkerTaskDispatcher extends BaseTaskDispatcher {
             }
         } catch (TaskDispatchException e) {
             throw e;
+            // 包装一下其他异常Exception为 TaskDispatchException 异常
         } catch (Exception e) {
             throw new TaskDispatchException(String.format("Dispatch task to %s failed",
-                    taskExecutionContext.getHost()), e);
+                    taskExecutionContext.getHost()), e);// 并且这里保留了原来异常的信息
         }
     }
 

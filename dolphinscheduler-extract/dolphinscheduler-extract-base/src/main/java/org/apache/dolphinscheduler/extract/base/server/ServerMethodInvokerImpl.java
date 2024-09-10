@@ -30,6 +30,11 @@ public class ServerMethodInvokerImpl implements ServerMethodInvoker {
     public ServerMethodInvokerImpl(Object serviceBean, Method method) {
         this.serviceBean = serviceBean;
         this.method = method;
+        /****
+         * toGenericString() 方法返回的是一个字符串，
+         * 包含了方法的修饰符、返回类型、方法名、参数类型以及泛型信息等。
+         * 这个方法返回的字符串更详细，包含了比 toString() 方法更多的信息，特别是在涉及到泛型的情况下。
+         */
         this.methodIdentify = method.toGenericString();
     }
 

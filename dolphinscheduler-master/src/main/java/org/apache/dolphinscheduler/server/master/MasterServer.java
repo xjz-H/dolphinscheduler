@@ -60,7 +60,7 @@ public class MasterServer implements IStoppable {
 
     @Autowired
     private TaskPluginManager taskPluginManager;
-
+    // 这是一个守护线程
     @Autowired
     private MasterSchedulerBootstrap masterSchedulerBootstrap;
 
@@ -77,7 +77,7 @@ public class MasterServer implements IStoppable {
     private MasterRpcServer masterRPCServer;
 
     public static void main(String[] args) {
-        //设置主线成的名字
+        // 设置主线成的名字
         Thread.currentThread().setName(Constants.THREAD_NAME_MASTER_SERVER);
         SpringApplication.run(MasterServer.class);
     }
@@ -97,10 +97,10 @@ public class MasterServer implements IStoppable {
         // self tolerant 向这zk注册监听器进行容错。
         this.masterRegistryClient.start();
         this.masterRegistryClient.setRegistryStoppable(this);
-        // 扫描command命令的后湖线程，启用调度线程确保只有一个线程来启动调度器
+        // 扫描command命令的后线程，启用调度线程确保只有一个线程来启动调度器
         // start master scheduler
         this.masterSchedulerBootstrap.start();
-        //q:
+
         this.eventExecuteService.start();
         this.failoverExecuteThread.start();
 

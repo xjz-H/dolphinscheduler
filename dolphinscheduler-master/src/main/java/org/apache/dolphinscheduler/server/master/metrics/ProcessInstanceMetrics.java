@@ -38,7 +38,7 @@ import io.micrometer.core.instrument.Timer;
  * 3、将这个类标记为final，不允许被继承
  */
 
-// 这个类的作用   用于记录工作流实例的指标    这些指标在什么时候被使用呢？
+// 这个类的作用 用于记录工作流实例的指标 这些指标在什么时候被使用呢？
 @UtilityClass
 @Slf4j
 public class ProcessInstanceMetrics {
@@ -55,8 +55,8 @@ public class ProcessInstanceMetrics {
         }
 
     }
-   //创建一个计时器
-    //Metrics.globalRegistry 是一个全局的注册表，用于存储所有的指标 ，是被记录到内存中吗？    是的，是被记录到内存中的
+    // 创建一个计时器
+    // Metrics.globalRegistry 是一个全局的注册表，用于存储所有的指标 ，是被记录到内存中吗？ 是的，是被记录到内存中的
     private final Timer commandQueryTimer =
             Timer.builder("ds.workflow.command.query.duration")
                     .description("Command query duration")

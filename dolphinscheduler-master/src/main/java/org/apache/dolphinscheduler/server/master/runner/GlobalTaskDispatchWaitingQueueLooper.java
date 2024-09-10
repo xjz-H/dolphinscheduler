@@ -31,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/***
+ * 任务的分配
+ */
 @Slf4j
 @Component
 public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread implements AutoCloseable {
@@ -69,6 +72,7 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
         DefaultTaskExecuteRunnable defaultTaskExecuteRunnable;
         while (RUNNING_FLAG.get()) {
             try {
+                // 获取队列中的task 使用take方法来获取，阻塞的方法
                 defaultTaskExecuteRunnable = globalTaskDispatchWaitingQueue.takeNeedToDispatchTaskExecuteRunnable();
             } catch (InterruptedException e) {
                 log.warn("Get waiting dispatch task failed, the current thread has been interrupted, will stop loop");
@@ -90,6 +94,7 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
                 if (DISPATCHED_TIMES.incrementAndGet() > MAX_DISPATCHED_FAILED_TIMES) {
                     ThreadUtils.sleep(10 * 1000L);
                 }
+                // 打印异常信息
                 log.error("Dispatch task failed", e);
             }
         }

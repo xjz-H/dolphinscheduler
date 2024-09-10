@@ -71,7 +71,7 @@ public class ProcessInstance {
     /**
      * state desc list from state history
      */
-    //表示不映射数据库中的字段
+    // 表示不映射数据库中的字段
     @TableField(exist = false)
     private List<StateDesc> stateDescList;
 
@@ -221,7 +221,7 @@ public class ProcessInstance {
     public ProcessInstance(ProcessDefinition processDefinition) {
         this.processDefinition = processDefinition;
         // todo: the name is not unique
-        //给流程实例一个名字，名字由流程定义名字+版本号+时间戳组成。
+        // 给流程实例一个名字，名字由流程定义名字+版本号+时间戳组成。
         this.name = String.join("-",
                 processDefinition.getName(),
                 String.valueOf(processDefinition.getVersion()),

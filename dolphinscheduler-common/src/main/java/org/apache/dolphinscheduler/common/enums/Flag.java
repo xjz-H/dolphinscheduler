@@ -42,6 +42,11 @@ public enum Flag {
         this.descp = descp;
     }
 
+    /****
+     * @EnumValue 是 MyBatis 中的一个注解，用于指定枚举类中哪个字段的值应该映射到数据库中的字段。
+     * 在 MyBatis 中，通常会将枚举类的值存储在数据库中，
+     * 而 @EnumValue 注解可以帮助 MyBatis 映射枚举值和数据库字段。
+     */
     @EnumValue
     private final int code;
     private final String descp;

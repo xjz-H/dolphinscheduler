@@ -129,6 +129,7 @@ public class TaskInstanceDaoImpl extends BaseDao<TaskInstance, TaskInstanceMappe
 
     @Override
     public List<TaskInstance> queryValidTaskListByWorkflowInstanceId(Integer processInstanceId, int testFlag) {
+        //Flag 有效标志
         return mybatisMapper.findValidTaskListByProcessId(processInstanceId, Flag.YES, testFlag);
     }
 

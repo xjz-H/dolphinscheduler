@@ -35,7 +35,6 @@ public class RandomSelector extends AbstractSelector<HostWorker> {
         int[] weights = new int[size];
         int totalWeight = 0;
         int index = 0;
-
         for (HostWorker host : hosts) {
             totalWeight += host.getHostWeight();
             weights[index] = host.getHostWeight();
@@ -43,6 +42,7 @@ public class RandomSelector extends AbstractSelector<HostWorker> {
         }
 
         if (totalWeight > 0) {
+            //线程安全的随机生成器
             int offset = ThreadLocalRandom.current().nextInt(totalWeight);
 
             for (int i = 0; i < size; i++) {

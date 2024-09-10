@@ -108,6 +108,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     @Override
     public void close() throws Exception {
         log.info("MasterSchedulerBootstrap stopping...");
+        //try-with-resource来关闭资源
         try (
                 final WorkflowEventLooper workflowEventLooper1 = workflowEventLooper;
                 final MasterTaskExecutorBootstrap masterTaskExecutorBootstrap1 = masterTaskExecutorBootstrap) {
@@ -132,6 +133,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
      * 10. 如果出现异常，则休眠1s
      *
      */
+    //消费command 创建工作流实例
     @Override
     public void run() {
         while (!ServerLifeCycleManager.isStopped()) {
@@ -177,7 +179,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                                     log.error(
                                             "The workflow instance is already been cached, this case shouldn't be happened");
                                 }
-                                //将workflowInstance放入到缓存中
+                                //将workflowInstance放入到缓存中,如果已经存在就会更新为新的
                                 processInstanceExecCacheManager.cache(processInstance.getId(), workflowExecuteRunnable);
                                 //关键的一步，将事件添加到工作流线程队列中
                                 workflowEventQueue.addEvent(

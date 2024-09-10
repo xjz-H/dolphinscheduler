@@ -612,6 +612,7 @@ public class ProcessServiceImpl implements ProcessService {
         processInstance.setIsSubProcess(Flag.NO);
         processInstance.setTaskDependType(command.getTaskDependType());
         processInstance.setFailureStrategy(command.getFailureStrategy());
+        //这个执行器ID是什么ID。是指定这个command 由哪台机器来执行吗？
         processInstance.setExecutorId(command.getExecutorId());
         processInstance.setExecutorName(Optional.ofNullable(userMapper.selectById(command.getExecutorId()))
                 .map(User::getUserName).orElse(null));
@@ -883,7 +884,7 @@ public class ProcessServiceImpl implements ProcessService {
                 processInstance.setRunTimes(runTime + 1);
                 break;
             case RECOVER_TOLERANCE_FAULT_PROCESS:
-                // recover tolerance fault process
+                // recover tolerance fault process。容错恢复的实例
                 processInstance.setRecovery(Flag.YES);
                 processInstance.setRunTimes(runTime + 1);
                 runStatus = processInstance.getState();
@@ -1188,7 +1189,7 @@ public class ProcessServiceImpl implements ProcessService {
                 taskInstance.getName(),
                 taskInstance.getProcessInstanceId(),
                 processInstance.getState());
-        // submit to db
+        // submit to db   这个时候才实例化任务到db中
         if (!taskInstanceDao.submitTaskInstanceToDB(taskInstance, processInstance)) {
             log.error("Save taskInstance to db error, task name:{}, process id:{} state: {} ",
                     taskInstance.getName(),
@@ -1362,6 +1363,7 @@ public class ProcessServiceImpl implements ProcessService {
     public void packageTaskInstance(TaskInstance taskInstance, ProcessInstance processInstance) {
         taskInstance.setProcessInstance(processInstance);
         taskInstance.setProcessDefine(processInstance.getProcessDefinition());
+        //工作流实例的优先级赋值给任务实例
         taskInstance.setProcessInstancePriority(processInstance.getProcessInstancePriority());
         TaskDefinition taskDefinition = taskDefinitionDao.findTaskDefinition(
                 taskInstance.getTaskCode(),
@@ -1606,11 +1608,13 @@ public class ProcessServiceImpl implements ProcessService {
      *
      * @param processInstance processInstance
      */
+    //接管宕机机器的实例重新生成相应的cmd。
     @Override
     @Transactional
     public void processNeedFailoverProcessInstances(ProcessInstance processInstance) {
         // updateProcessInstance host is null to mark this processInstance has been failover
         // and insert a failover command
+        // 实例host 什么时候赋值，赋值的是master host 吗？
         processInstance.setHost(Constants.NULL);
         processInstanceMapper.updateById(processInstance);
 
@@ -1620,7 +1624,9 @@ public class ProcessServiceImpl implements ProcessService {
         cmd.setProcessDefinitionVersion(processInstance.getProcessDefinitionVersion());
         cmd.setProcessInstanceId(processInstance.getId());
         cmd.setCommandParam(JSONUtils.toJsonString(createCommandParams(processInstance)));
+        //执行器的host 吗？
         cmd.setExecutorId(processInstance.getExecutorId());
+        //容错的command 类型
         cmd.setCommandType(CommandType.RECOVER_TOLERANCE_FAULT_PROCESS);
         cmd.setProcessInstancePriority(processInstance.getProcessInstancePriority());
         cmd.setTestFlag(processInstance.getTestFlag());

@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
+//守护线程去消费分配到的任务
 @Slf4j
 @Component
 public class GlobalTaskInstanceDispatchQueueLooper extends BaseDaemonThread {

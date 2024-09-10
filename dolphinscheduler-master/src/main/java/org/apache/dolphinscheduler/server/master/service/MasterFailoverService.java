@@ -89,10 +89,11 @@ public class MasterFailoverService {
             failoverMaster(needFailoverMasterHost);
         }
     }
-
+    //failoverMaster 有两处使用，一个守护线程去主动检测master机器宕机，另一处就是事件机制，向zk注册master remove 事件。如果有master 宕机就会调用该方法
     public void failoverMaster(String masterHost) {
         String failoverPath = RegistryNodeType.MASTER_FAILOVER_LOCK.getRegistryPath() + "/" + masterHost;
         try {
+            //这里使用了分布式锁来做了并发控制。
             registryClient.getLock(failoverPath);
             doFailoverMaster(masterHost);
         } catch (Exception e) {

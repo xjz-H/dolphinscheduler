@@ -72,7 +72,7 @@ public class TaskExecutionContext implements Serializable {
     private String workflowInstanceHost;
 
     /**
-     * host
+     * host  执行任务的worker  ip
      */
     private String host;
 

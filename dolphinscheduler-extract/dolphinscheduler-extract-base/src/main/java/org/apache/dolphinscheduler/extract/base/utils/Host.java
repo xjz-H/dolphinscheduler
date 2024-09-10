@@ -53,7 +53,7 @@ public class Host implements Serializable {
     public String getAddress() {
         return ip + COLON + port;
     }
-
+    //静态工厂
     public static Host of(@NonNull String address) {
         return new Host(address);
     }

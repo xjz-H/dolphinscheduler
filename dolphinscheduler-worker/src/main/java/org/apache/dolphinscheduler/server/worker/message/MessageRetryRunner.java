@@ -53,14 +53,14 @@ public class MessageRetryRunner extends BaseDaemonThread {
     }
 
     private static final long MESSAGE_RETRY_WINDOW = Duration.ofMinutes(5L).toMillis();
-
+    //先注入到List中
     @Lazy
     @Autowired
     private List<TaskInstanceExecutionEventSender> messageSenders;
-
+    //再放入到Map中
     private final Map<ITaskInstanceExecutionEvent.TaskInstanceExecutionEventType, TaskInstanceExecutionEventSender<ITaskInstanceExecutionEvent>> messageSenderMap =
             new HashMap<>();
-
+    //收到worker 的更新数据库任务实例的状态后会删除任务的message
     private final Map<Integer, List<TaskInstanceMessage>> needToRetryMessages = new ConcurrentHashMap<>();
 
     @Override
@@ -125,9 +125,11 @@ public class MessageRetryRunner extends BaseDaemonThread {
                             ITaskInstanceExecutionEvent.TaskInstanceExecutionEventType eventType =
                                     taskInstanceMessage.getEventType();
                             ITaskInstanceExecutionEvent event = taskInstanceMessage.getEvent();
+                            //每隔5分钟发送一次
                             if (now - event.getEventSendTime() > MESSAGE_RETRY_WINDOW) {
                                 log.info("Begin retry send message to master, event: {}", event);
                                 event.setEventSendTime(now);
+                                //发送消息
                                 messageSenderMap.get(eventType).sendEvent(event);
                                 log.info("Success send message to master, event: {}", event);
                             }
@@ -162,7 +164,7 @@ public class MessageRetryRunner extends BaseDaemonThread {
         private long taskInstanceId;
         private ITaskInstanceExecutionEvent.TaskInstanceExecutionEventType eventType;
         private ITaskInstanceExecutionEvent event;
-
+        //静态工厂
         public static TaskInstanceMessage of(long taskInstanceId,
                                              ITaskInstanceExecutionEvent.TaskInstanceExecutionEventType eventType,
                                              ITaskInstanceExecutionEvent event) {

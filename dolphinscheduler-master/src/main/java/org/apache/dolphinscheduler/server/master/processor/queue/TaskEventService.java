@@ -43,7 +43,7 @@ import org.springframework.stereotype.Component;
 public class TaskEventService {
 
     /**
-     * attemptQueue
+     * attemptQueue   把接受worker 的响应放入到队列中
      */
     private final BlockingQueue<TaskEvent> eventQueue = new LinkedBlockingQueue<>();
 

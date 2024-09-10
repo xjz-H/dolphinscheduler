@@ -61,6 +61,7 @@ public abstract class BaseTaskDispatcher implements TaskDispatcher {
             addDispatchFailedEvent(taskExecuteRunnable);
             return;
         }
+        //设置runnable的worker 的IP地址
         taskExecuteRunnable.getTaskExecutionContext().setHost(taskInstanceDispatchHost.getAddress());
         doDispatch(taskExecuteRunnable);
         taskExecuteRunnable.getTaskInstance().setHost(taskInstanceDispatchHost.getAddress());

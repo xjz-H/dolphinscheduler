@@ -94,7 +94,7 @@ public class MasterServer implements IStoppable {
         // install task plugin
         this.taskPluginManager.loadPlugin();
 
-        // self tolerant
+        // self tolerant 向这zk注册监听器进行容错。
         this.masterRegistryClient.start();
         this.masterRegistryClient.setRegistryStoppable(this);
         // 扫描command命令的后湖线程，启用调度线程确保只有一个线程来启动调度器

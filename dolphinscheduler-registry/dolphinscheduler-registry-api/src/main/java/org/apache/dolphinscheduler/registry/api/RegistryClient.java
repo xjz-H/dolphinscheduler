@@ -124,6 +124,7 @@ public class RegistryClient {
 
     /**
      * Return server host:port -> value
+     * 容错的时候主动去zk 拉取其他存活服务的状态。历史运行master 的host 从db工作流实例中获取
      */
     public Map<String, String> getServerMaps(RegistryNodeType nodeType) {
         Map<String, String> serverMap = new HashMap<>();

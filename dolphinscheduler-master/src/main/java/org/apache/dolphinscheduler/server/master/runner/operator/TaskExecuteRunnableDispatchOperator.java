@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TaskExecuteRunnableDispatchOperator implements TaskExecuteRunnableOperator {
-
+    //把taskInstance 放入到queue中。
     @Autowired
     private GlobalTaskDispatchWaitingQueue globalTaskDispatchWaitingQueue;
 

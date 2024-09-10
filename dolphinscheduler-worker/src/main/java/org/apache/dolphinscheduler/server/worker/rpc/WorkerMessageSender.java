@@ -39,7 +39,7 @@ import org.springframework.stereotype.Component;
 public class WorkerMessageSender {
 
     @Autowired
-    private MessageRetryRunner messageRetryRunner;
+    private MessageRetryRunner  messageRetryRunner;
 
     @Autowired
     private List<TaskInstanceExecutionEventSender> messageSenders;
@@ -60,6 +60,7 @@ public class WorkerMessageSender {
         if (messageSender == null) {
             throw new IllegalArgumentException("The messageType is invalidated, messageType: " + eventType);
         }
+        //创建任务的执行事件
         ITaskInstanceExecutionEvent iTaskInstanceExecutionEvent = messageSender.buildEvent(taskExecutionContext);
         try {
             messageRetryRunner.addRetryMessage(taskExecutionContext.getTaskInstanceId(), iTaskInstanceExecutionEvent);

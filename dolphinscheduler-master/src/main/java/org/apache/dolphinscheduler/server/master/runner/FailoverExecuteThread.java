@@ -55,7 +55,7 @@ public class FailoverExecuteThread extends BaseDaemonThread {
 
     @Override
     public void run() {
-        // when startup, wait 10s for ready
+        // when startup, wait 10s for ready。等其他节点都注册zk成功
         ThreadUtils.sleep(Constants.SLEEP_TIME_MILLIS * 10);
 
         while (!ServerLifeCycleManager.isStopped()) {
@@ -69,6 +69,7 @@ public class FailoverExecuteThread extends BaseDaemonThread {
             } catch (Exception e) {
                 log.error("Master failover thread execute error", e);
             } finally {
+                //每隔10分钟去执行一次。
                 ThreadUtils.sleep(masterConfig.getFailoverInterval().toMillis());
             }
         }

@@ -23,7 +23,7 @@ import org.apache.dolphinscheduler.extract.master.transportor.TaskInstanceExecut
 import org.apache.dolphinscheduler.extract.master.transportor.TaskInstanceExecutionInfoEvent;
 import org.apache.dolphinscheduler.extract.master.transportor.TaskInstanceExecutionRunningEvent;
 import org.apache.dolphinscheduler.extract.master.transportor.WorkflowInstanceStateChangeEvent;
-
+//定义master rpc Method 的接口
 @RpcService
 public interface ITaskInstanceExecutionEventListener {
 

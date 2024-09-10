@@ -494,6 +494,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             return;
         }
         waitToRetryTaskInstanceMap.put(newTaskInstance.getTaskCode(), newTaskInstance);
+        //任务按照时间间隔重试超出了最晚时间
         if (!taskInstance.retryTaskIntervalOverTime()) {
             log.info(
                     "Failure task will be submitted, process id: {}, task instance code: {}, state: {}, retry times: {} / {}, interval: {}",
@@ -533,6 +534,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
      */
     public void refreshTaskInstance(int taskInstanceId) {
         log.info("task instance update: {} ", taskInstanceId);
+        //从数据库中查询到任务实例。容错的任务实例数据库中已经存在，
         TaskInstance taskInstance = taskInstanceDao.queryById(taskInstanceId);
         if (taskInstance == null) {
             log.error("can not find task instance, id:{}", taskInstanceId);
@@ -721,7 +723,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 return WorkflowStartStatus.DUPLICATED_SUBMITTED;
             }
             if (workflowRunnableStatus == WorkflowRunnableStatus.CREATED) {
-                initTaskQueue();////初始化任务调度配置
+                initTaskQueue();//失败重试容错逻辑
                 workflowRunnableStatus = WorkflowRunnableStatus.INITIALIZE_QUEUE;
                 log.info("workflowStatue changed to :{}", workflowRunnableStatus);
             }
@@ -816,7 +818,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
         dependFailedTaskSet.clear();
         completeTaskSet.clear();
         errorTaskMap.clear();
-
+        //扫描命令的时候会生成工作流实例。
         ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
         ProcessDefinition workflowDefinition = workflowExecuteContext.getWorkflowDefinition();
 
@@ -827,6 +829,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             List<TaskInstance> validTaskInstanceList =
                     taskInstanceDao.queryValidTaskListByWorkflowInstanceId(workflowInstance.getId(),
                             workflowInstance.getTestFlag());
+            //获取非新工作流实例的所有任务
             for (TaskInstance task : validTaskInstanceList) {
                 try {
                     LogUtils.setWorkflowAndTaskInstanceIDMDC(task.getProcessInstanceId(), task.getId());
@@ -840,6 +843,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                                 task.getTaskCode());
                         int oldTaskInstanceId = validTaskMap.get(task.getTaskCode());
                         TaskInstance oldTaskInstance = taskInstanceMap.get(oldTaskInstanceId);
+                        //内存中就的任务实例不是完成状态，数据库中查询出来的新的任务实例是完成状态，直接更新数据库中的任务实例为完成状态，把有效状态设置为无效，不在查询出来
                         if (!oldTaskInstance.getState().isFinished() && task.getState().isFinished()) {
                             task.setFlag(Flag.NO);
                             taskInstanceDao.updateById(task);
@@ -857,11 +861,15 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                         completeTaskSet.add(task.getTaskCode());
                         continue;
                     }
+
+                    //任务是条件任务
                     if (task.isConditionsTask() || DagHelper.haveConditionsAfterNode(task.getTaskCode(),
                             workflowExecuteContext.getWorkflowGraph().getDag())) {
                         continue;
                     }
+
                     if (task.taskCanRetry()) {
+                        //失败容错
                         if (task.getState().isNeedFaultTolerance()) {
                             log.info("TaskInstance needs fault tolerance, will be added to standby list.");
                             task.setFlag(Flag.NO);
@@ -871,11 +879,13 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                             TaskInstance tolerantTaskInstance = cloneTolerantTaskInstance(task);
                             addTaskToStandByList(tolerantTaskInstance);
                         } else {
+                            //失败重试
                             log.info("Retry taskInstance, taskState: {}", task.getState());
                             retryTaskInstance(task);
                         }
                         continue;
                     }
+
                     if (task.getState().isFailure()) {
                         errorTaskMap.put(task.getTaskCode(), task.getId());
                     }
@@ -932,7 +942,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 completeTaskSet,
                 errorTaskMap);
     }
-
+    //任务实例什么时候持久化到DB中。当任务提交进行分配的时候会持久化到DB中
     private boolean executeTask(TaskInstance taskInstance) {
         try {
             ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
@@ -940,7 +950,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             // todo: we need to use task execute context rather than packege a lot of pojo into task instance
             // 1. submit the task instance to db
             processService.packageTaskInstance(taskInstance, workflowInstance);
-            // todo: remove this method
+            // todo: remove this method  任务提交到DB
             if (!processService.submitTask(workflowInstance, taskInstance)) {
                 log.error("Submit standby task: {} failed", taskInstance.getName());
                 return true;
@@ -949,6 +959,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             // in a dag, only one taskInstance is valid per taskCode, so need to set the old taskInstance invalid
             try {
                 LogUtils.setTaskInstanceIdMDC(taskInstance.getId());
+                //封装任务执行的runnable
                 DefaultTaskExecuteRunnable taskExecuteRunnable =
                         defaultTaskExecuteRunnableFactory.createTaskExecuteRunnable(taskInstance);
                 if (validTaskMap.containsKey(taskInstance.getTaskCode())) {
@@ -986,7 +997,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                         return true;
                     }
                 }
-                // 4. submit to dispatch queue
+                // 4. submit to dispatch queue  提交任务到队列
                 tryToDispatchTaskInstance(taskInstance, taskExecuteRunnable);
 
                 stateWheelExecuteThread.addTask4TimeoutCheck(workflowInstance, taskInstance);
@@ -1007,6 +1018,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
     @VisibleForTesting
     void tryToDispatchTaskInstance(TaskInstance taskInstance, TaskExecuteRunnable taskExecuteRunnable) {
         if (!taskInstance.getState().isFinished()) {
+            // 放到dispatch的队列中
             taskExecuteRunnable.dispatch();
         } else {
             if (workflowExecuteContext.getWorkflowInstance().isBlocked()) {
@@ -1313,7 +1325,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
     private void submitPostNode(Long parentNodeCode) throws StateEventHandleException {
         ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
         DAG<Long, TaskNode, TaskNodeRelation> dag = workflowExecuteContext.getWorkflowGraph().getDag();
-
+        //直接获取直接后继结点，获取后继结点不需要再读取内存，工作流的信息都封装到了上下文信息中
         Set<Long> submitTaskNodeList =
                 DagHelper.parsePostNodes(parentNodeCode, skipTaskNodeMap, dag, getCompleteTaskInstanceMap());
         List<TaskInstance> taskInstances = new ArrayList<>();
@@ -1328,11 +1340,13 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                         || state == TaskExecutionStatus.SUBMITTED_SUCCESS) {
                     // try to take over task instance
                     if (state != TaskExecutionStatus.SUBMITTED_SUCCESS
+                            //更新任务实例worker 发送更新任务实例结果消息的master。tryToTakeOverTaskInstance 给worker 发送消息更新master 的地址。
                             && tryToTakeOverTaskInstance(existTaskInstance)) {
                         log.info("Success take over task {}", existTaskInstance.getName());
                         continue;
                     } else {
                         // set the task instance state to fault tolerance
+                        //任务提交成功
                         existTaskInstance.setFlag(Flag.NO);
                         existTaskInstance.setState(TaskExecutionStatus.NEED_FAULT_TOLERANCE);
                         validTaskMap.remove(existTaskInstance.getTaskCode());
@@ -1957,6 +1971,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             DependResult dependResult = getDependResultForTask(task);
             if (DependResult.SUCCESS == dependResult) {
                 log.info("The dependResult of task {} is success, so ready to submit to execute", task.getName());
+                //真正执行任务
                 if (!executeTask(task)) {
                     this.taskFailedSubmit = true;
                     // Remove and add to complete map and error map
@@ -2064,11 +2079,12 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
 
     private boolean isNewProcessInstance() {
         ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
+        //工作流恢复标志
         if (Flag.YES.equals(workflowInstance.getRecovery())) {
             log.info("This workInstance will be recover by this execution");
             return false;
         }
-
+        //工作流正在运行，运行次数1次，说明是新的工作流。
         if (WorkflowExecutionStatus.RUNNING_EXECUTION == workflowInstance.getState()
                 && workflowInstance.getRunTimes() == 1) {
             return true;

@@ -172,7 +172,7 @@ public class WorkerFailoverService {
         } else {
             log.info("The failover taskInstance is a master task, no need to failover in worker failover");
         }
-
+        //更新自己的任务状态为需要容错。
         taskInstance.setState(TaskExecutionStatus.NEED_FAULT_TOLERANCE);
         taskInstance.setFlag(Flag.NO);
         taskInstanceDao.upsertTaskInstance(taskInstance);
@@ -232,7 +232,7 @@ public class WorkerFailoverService {
 
         return true;
     }
-
+    //master  会派发自己管辖的任务实例到不动的worker。此处过滤出的宕机的worker 所执行的所有任务实例。
     private List<TaskInstance> getNeedFailoverTaskInstance(@NonNull String failoverWorkerHost) {
         // we query the task instance from cache, so that we can directly update the cache
         return cacheManager.getAll()

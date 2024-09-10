@@ -87,7 +87,7 @@ public class ProcessInstance {
     private int runTimes;
 
     private String name;
-
+    //实例中的host 设置的是master 的IP，代表这个实例是有哪个master transfer 的。当数据库中的host为null 的时候，这个实例是主机master 宕机后容错生成的实例
     private String host;
 
     @TableField(exist = false)

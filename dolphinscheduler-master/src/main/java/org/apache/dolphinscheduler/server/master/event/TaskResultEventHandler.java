@@ -98,6 +98,7 @@ public class TaskResultEventHandler implements TaskEventHandler {
             taskInstance.setEndTime(taskEvent.getEndTime());
             taskInstance.setVarPool(taskEvent.getVarPool());
             processService.changeOutParam(taskInstance);
+            //更新任务状态
             taskInstanceDao.updateById(taskInstance);
             sendAckToWorker(taskEvent);
         } catch (Exception ex) {

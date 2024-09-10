@@ -51,7 +51,7 @@ public class MessageRetryRunner extends BaseDaemonThread {
     protected MessageRetryRunner() {
         super("WorkerMessageRetryRunnerThread");
     }
-
+    //5分钟没有收到确认会再次发送
     private static final long MESSAGE_RETRY_WINDOW = Duration.ofMinutes(5L).toMillis();
 
     @Lazy
@@ -91,7 +91,7 @@ public class MessageRetryRunner extends BaseDaemonThread {
     public void removeRetryMessages(int taskInstanceId) {
         needToRetryMessages.remove(taskInstanceId);
     }
-
+    //更新时间发送的master地址
     public void updateMessageHost(int taskInstanceId, String messageReceiverHost) {
         List<TaskInstanceMessage> taskInstanceMessages = this.needToRetryMessages.get(taskInstanceId);
         if (taskInstanceMessages != null) {
@@ -125,6 +125,7 @@ public class MessageRetryRunner extends BaseDaemonThread {
                             ITaskInstanceExecutionEvent.TaskInstanceExecutionEventType eventType =
                                     taskInstanceMessage.getEventType();
                             ITaskInstanceExecutionEvent event = taskInstanceMessage.getEvent();
+                            //检查消息的发送时间，如果超过5分钟还没有收到确认消息会再次发送。
                             if (now - event.getEventSendTime() > MESSAGE_RETRY_WINDOW) {
                                 log.info("Begin retry send message to master, event: {}", event);
                                 event.setEventSendTime(now);

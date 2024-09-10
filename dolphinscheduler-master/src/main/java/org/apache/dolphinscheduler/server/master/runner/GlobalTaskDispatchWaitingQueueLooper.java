@@ -80,6 +80,7 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
             try {
                 final TaskDispatcher taskDispatcher = taskDispatchFactory
                         .getTaskDispatcher(defaultTaskExecuteRunnable.getTaskInstance().getTaskType());
+                //分配任务
                 taskDispatcher.dispatchTask(defaultTaskExecuteRunnable);
                 DISPATCHED_TIMES.set(0);
             } catch (Exception e) {

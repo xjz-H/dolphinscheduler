@@ -1189,7 +1189,7 @@ public class ProcessServiceImpl implements ProcessService {
                 taskInstance.getProcessInstanceId(),
                 processInstance.getState());
         // submit to db
-        if (!taskInstanceDao.submitTaskInstanceToDB(taskInstance, processInstance)) {
+        if (!taskInstanceDao.submitTaskInstanceToDB(taskInstance, processInstance)) {//任务实例保存到db中
             log.error("Save taskInstance to db error, task name:{}, process id:{} state: {} ",
                     taskInstance.getName(),
                     taskInstance.getProcessInstance().getId(),

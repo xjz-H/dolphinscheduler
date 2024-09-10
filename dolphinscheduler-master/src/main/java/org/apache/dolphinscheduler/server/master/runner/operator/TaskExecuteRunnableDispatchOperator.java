@@ -22,7 +22,7 @@ import org.apache.dolphinscheduler.server.master.runner.execute.DefaultTaskExecu
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
+// 把任务添加到待分配的队列中
 @Component
 public class TaskExecuteRunnableDispatchOperator implements TaskExecuteRunnableOperator {
 

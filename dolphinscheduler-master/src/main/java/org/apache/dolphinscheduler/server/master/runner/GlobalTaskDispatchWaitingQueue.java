@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class GlobalTaskDispatchWaitingQueue {
-
+     //优先级阻塞队列，该队列是无界的，当队列元素为空时，使用take 函数获取方法会导致阻塞
     private final PriorityBlockingQueue<DefaultTaskExecuteRunnable> queue = new PriorityBlockingQueue<>();
 
     public void submitNeedToDispatchTaskExecuteRunnable(DefaultTaskExecuteRunnable priorityTaskExecuteRunnable) {

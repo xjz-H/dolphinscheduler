@@ -49,19 +49,17 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
     private final AtomicInteger DISPATCHED_TIMES = new AtomicInteger();
 
     private static final Integer MAX_DISPATCHED_FAILED_TIMES = 100;
-    //子类只会默认调用父类的无参构造方法
+
     public GlobalTaskDispatchWaitingQueueLooper() {
         super("GlobalTaskDispatchWaitingQueueLooper");
     }
 
     @Override
     public synchronized void start() {
-        //先启动开关
         if (!RUNNING_FLAG.compareAndSet(false, true)) {
             log.error("The GlobalTaskDispatchWaitingQueueLooper already started, will not start again");
             return;
         }
-        //再启动线程
         log.info("GlobalTaskDispatchWaitingQueueLooper starting...");
         super.start();
         log.info("GlobalTaskDispatchWaitingQueueLooper started...");
@@ -82,15 +80,12 @@ public class GlobalTaskDispatchWaitingQueueLooper extends BaseDaemonThread imple
             try {
                 final TaskDispatcher taskDispatcher = taskDispatchFactory
                         .getTaskDispatcher(defaultTaskExecuteRunnable.getTaskInstance().getTaskType());
+                //分配任务
                 taskDispatcher.dispatchTask(defaultTaskExecuteRunnable);
-                //成功了这个值置为0
                 DISPATCHED_TIMES.set(0);
             } catch (Exception e) {
-                //记录分配任务失败的次数
                 defaultTaskExecuteRunnable.getTaskExecutionContext().increaseDispatchFailTimes();
-                //重新添加到队列中。添加任务到worker的队列失败了重新放入到队列中
                 globalTaskDispatchWaitingQueue.submitNeedToDispatchTaskExecuteRunnable(defaultTaskExecuteRunnable);
-               //经常失败就会休眠
                 if (DISPATCHED_TIMES.incrementAndGet() > MAX_DISPATCHED_FAILED_TIMES) {
                     ThreadUtils.sleep(10 * 1000L);
                 }

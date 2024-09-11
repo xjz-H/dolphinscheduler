@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableList;
  */
 @Component
 public class ProcessInstanceExecCacheManagerImpl implements ProcessInstanceExecCacheManager {
-
+    //使用concurrentHashMap来做缓存，key使用实例intanceId
     private final ConcurrentHashMap<Integer, WorkflowExecuteRunnable> processInstanceExecMaps =
             new ConcurrentHashMap<>();
 

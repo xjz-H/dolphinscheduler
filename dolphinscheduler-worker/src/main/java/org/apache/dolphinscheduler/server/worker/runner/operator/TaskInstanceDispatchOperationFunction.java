@@ -39,7 +39,7 @@ public class TaskInstanceDispatchOperationFunction
 
     @Autowired
     private WorkerConfig workerConfig;
-    //阻塞队列放置任务执行的上下文
+
     @Autowired
     private GlobalTaskInstanceDispatchQueue globalTaskInstanceDispatchQueue;
 

@@ -111,7 +111,6 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
     @Override
     public void close() throws Exception {
         log.info("MasterSchedulerBootstrap stopping...");
-        //try-with-resource来关闭资源
         try (
                 final WorkflowEventLooper workflowEventLooper1 = workflowEventLooper;
                 final MasterTaskExecutorBootstrap masterTaskExecutorBootstrap1 = masterTaskExecutorBootstrap) {
@@ -171,7 +170,7 @@ public class MasterSchedulerBootstrap extends BaseDaemonThread implements AutoCl
                                 if (!workflowExecuteRunnableOptional.isPresent()) {
                                     log.warn(
                                             "The command execute success, will not trigger a WorkflowExecuteRunnable, this workflowInstance might be in serial mode");
-                                   //lambda表达式本质上是一个函数
+                                    // lambda表达式本质上是一个函数
                                     return;
                                 }
                                 WorkflowExecuteRunnable workflowExecuteRunnable = workflowExecuteRunnableOptional.get();

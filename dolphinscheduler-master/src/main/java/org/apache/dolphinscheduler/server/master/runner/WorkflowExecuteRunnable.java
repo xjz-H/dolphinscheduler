@@ -121,6 +121,7 @@ import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -418,7 +419,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 if (workflowInstance.getFailureStrategy() == FailureStrategy.CONTINUE && DagHelper.haveAllNodeAfterNode(
                         taskInstance.getTaskCode(),
                         workflowExecuteContext.getWorkflowGraph().getDag())) {
-                    submitPostNode(taskInstance.getTaskCode());
+                    submitPostNode(taskInstance.getTaskCode());//任务运行失败后，如果是直接跳过失败节点的策略，会直接运行后继节点
                 } else {
                     errorTaskMap.put(taskInstance.getTaskCode(), taskInstance.getId());
                     if (workflowInstance.getFailureStrategy() == FailureStrategy.END) {
@@ -728,16 +729,16 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 log.warn("The workflow has already been started, current state: {}", workflowRunnableStatus);
                 return WorkflowStartStatus.DUPLICATED_SUBMITTED;
             }
-            // 可运行的工作流状态放在队列中的初始状态是create
+            //可运行的工作流状态放在队列中的初始状态是create
             if (workflowRunnableStatus == WorkflowRunnableStatus.CREATED) {
-                initTaskQueue();//// 初始化任务调度配置，工作流切分为任务粒度
+                initTaskQueue();//// 初始化任务调度配置，工作流切分为任务粒度, 新的工作流实例这个方法什么也不做只是打印一行日志。
                 // CREATED->INITIALIZE_QUEUE
                 workflowRunnableStatus = WorkflowRunnableStatus.INITIALIZE_QUEUE;
                 log.info("workflowStatue changed to :{}", workflowRunnableStatus);
             }
             if (workflowRunnableStatus == WorkflowRunnableStatus.INITIALIZE_QUEUE) {
                 // 提交任务到队列中，注意是先提交源头结点，源头结点运行完再提交源头结点的下有节点
-                submitPostNode(null);
+                submitPostNode(null);//提交工作流的第一个节点
                 // 设置成开始状态
                 workflowRunnableStatus = WorkflowRunnableStatus.STARTED;
                 log.info("workflowStatue changed to :{}", workflowRunnableStatus);
@@ -876,16 +877,12 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                         continue;
                     }
                     // 条件任务直接过滤条，后继结点后条件结点
-
-                    //任务是条件任务
                     if (task.isConditionsTask() || DagHelper.haveConditionsAfterNode(task.getTaskCode(),
                             workflowExecuteContext.getWorkflowGraph().getDag())) {
                         continue;
                     }
-
                     if (task.taskCanRetry()) {
                         // 失败了需要容错的任务
-                        //失败容错
                         if (task.getState().isNeedFaultTolerance()) {
                             log.info("TaskInstance needs fault tolerance, will be added to standby list.");
                             task.setFlag(Flag.NO);
@@ -970,6 +967,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             // 1. submit the task instance to db
             processService.packageTaskInstance(taskInstance, workflowInstance);
             // todo: remove this method
+            //提交工作实例到DB中
             if (!processService.submitTask(workflowInstance, taskInstance)) {
                 log.error("Submit standby task: {} failed", taskInstance.getName());
                 return true;
@@ -981,7 +979,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 // 任务保存到db 后创建任务执行的runnable, 同样的工作流实例信息保存到Db 也是在内存中创建对应的runnable
                 //封装任务执行的runnable
                 DefaultTaskExecuteRunnable taskExecuteRunnable =
-                        defaultTaskExecuteRunnableFactory.createTaskExecuteRunnable(taskInstance);
+                        defaultTaskExecuteRunnableFactory.createTaskExecuteRunnable(taskInstance);//任务持久化内存后创建任务的执行的runable
                 if (validTaskMap.containsKey(taskInstance.getTaskCode())) {
                     int oldTaskInstanceId = validTaskMap.get(taskInstance.getTaskCode());
                     if (taskInstance.getId() != oldTaskInstanceId) {
@@ -1148,7 +1146,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
      * @param taskNode task node
      * @return task instance
      */
-    public TaskInstance newTaskInstance(ProcessInstance processInstance, TaskNode taskNode) {
+    public TaskInstance newTaskInstance(@NotNull ProcessInstance processInstance, TaskNode taskNode) {
         TaskInstance taskInstance = new TaskInstance();
         taskInstance.setTaskCode(taskNode.getCode());
         taskInstance.setTaskDefinitionVersion(taskNode.getVersion());
@@ -1342,18 +1340,18 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
         return validTaskInstanceList;
     }
 
-    private void submitPostNode(Long parentNodeCode) throws StateEventHandleException {
+    private void submitPostNode(Long parentNodeCode) throws StateEventHandleException {//第一个节点的运行是传入的null
         ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
         DAG<Long, TaskNode, TaskNodeRelation> dag = workflowExecuteContext.getWorkflowGraph().getDag();
         //直接获取直接后继结点，获取后继结点不需要再读取内存，工作流的信息都封装到了上下文信息中
         Set<Long> submitTaskNodeList =
-                DagHelper.parsePostNodes(parentNodeCode, skipTaskNodeMap, dag, getCompleteTaskInstanceMap());
+                DagHelper.parsePostNodes(parentNodeCode, skipTaskNodeMap, dag, getCompleteTaskInstanceMap());//第一个节点运行会传入null，则返回工作中开始的结点
         List<TaskInstance> taskInstances = new ArrayList<>();
         //遍历直接后继结点
         for (Long taskNode : submitTaskNodeList) {
             TaskNode taskNodeObject = dag.getNode(taskNode);
             //根据任务定义的taskCode来获取任务实例
-            Optional<TaskInstance> existTaskInstanceOptional = getTaskInstance(taskNodeObject.getCode());
+            Optional<TaskInstance> existTaskInstanceOptional = getTaskInstance(taskNodeObject.getCode());//刚开始的工作流获取为空
             if (existTaskInstanceOptional.isPresent()) {
                 TaskInstance existTaskInstance = existTaskInstanceOptional.get();
                 TaskExecutionStatus state = existTaskInstance.getState();
@@ -1362,7 +1360,6 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                         || state == TaskExecutionStatus.SUBMITTED_SUCCESS) {
                     // try to take over task instance
                     if (state != TaskExecutionStatus.SUBMITTED_SUCCESS
-                            //更新任务实例worker 发送更新任务实例结果消息的master。tryToTakeOverTaskInstance 给worker 发送消息更新master 的地址。
                             && tryToTakeOverTaskInstance(existTaskInstance)) {
                         log.info("Success take over task {}", existTaskInstance.getName());
                         continue;
@@ -1379,11 +1376,10 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 }
                 taskInstances.add(existTaskInstance);
             } else {
-                //创建任务实例
-                taskInstances.add(createTaskInstance(workflowInstance, taskNodeObject));
+                taskInstances.add(createTaskInstance(workflowInstance, taskNodeObject));//刚运行的工作流没有任务实例
             }
         }
-        // the end node of the branch of the dag 如果当前是dag的最后一个节点。
+        // the end node of the branch of the dag
         if (parentNodeCode != null && dag.getEndNode().contains(parentNodeCode)) {
             Optional<TaskInstance> existTaskInstanceOptional = getTaskInstance(parentNodeCode);
             if (existTaskInstanceOptional.isPresent()) {
@@ -1427,7 +1423,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
         }
 
         // if previous node success , post node submit
-        for (TaskInstance task : taskInstances) {
+        for (TaskInstance task : taskInstances) {// 刚运行的工作流实例会运行到这里
 
             if (readyToSubmitTaskQueue.contains(task)) {
                 log.warn("Task is already at submit queue, taskInstanceName: {}", task.getName());
@@ -1442,10 +1438,10 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 log.info("Task is be stopped, the state is {}, taskInstanceId: {}", task.getState(), task.getId());
                 continue;
             }
-            //将切分出来的工作流实例添加到优先级队列中
-            addTaskToStandByList(task);
+
+            addTaskToStandByList(task);//刚运行的工作流实例会运行到这里 添加到这个队列中readyToSubmitTaskQueue
         }
-        submitStandByTask();
+        submitStandByTask();//从readyToSubmitTaskQueue 中消费任务，对任务进行持久化
         updateProcessInstanceState();
     }
 
@@ -1964,7 +1960,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
     public void submitStandByTask() throws StateEventHandleException {
         ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
         TaskInstance task;
-        //从优先级队列中消费DAG切分创建出来的任务实例
+        // 从准备提交的任务队列中获取任务 peek方法并不会删除元素
         while ((task = readyToSubmitTaskQueue.peek()) != null) {
             // stop tasks which is retrying if forced success happens
             if (task.getId() != null && task.taskCanRetry()) {
@@ -1978,7 +1974,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                     completeTaskSet.add(task.getTaskCode());
                     taskInstanceMap.put(task.getId(), task);
                     taskCodeInstanceMap.put(task.getTaskCode(), task);
-                    submitPostNode(task.getTaskCode());
+                    submitPostNode(task.getTaskCode());//任务强制成功运行后继节点
                     continue;
                 }
             }
@@ -1994,7 +1990,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             DependResult dependResult = getDependResultForTask(task);
             if (DependResult.SUCCESS == dependResult) {
                 log.info("The dependResult of task {} is success, so ready to submit to execute", task.getName());
-                //真正执行任务
+                // 运行任务
                 if (!executeTask(task)) {
                     this.taskFailedSubmit = true;
                     // Remove and add to complete map and error map
@@ -2016,7 +2012,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                             task.getId(),
                             task.getTaskCode());
                 } else {
-                    removeTaskFromStandbyList(task);
+                    removeTaskFromStandbyList(task);//任务runabel创建成功再从队列中删除
                 }
             } else if (DependResult.FAILED == dependResult) {
                 // if the dependency fails, the current node is not submitted and the state changes to failure.
@@ -2256,7 +2252,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
             }
         }
     }
-    // 给Runnable设计一个状态枚举
+    // 给Runnable设计一个状态枚举,只在内部使用就定义为私有的
     private enum WorkflowRunnableStatus {
         CREATED, INITIALIZE_QUEUE, STARTED,
         ;

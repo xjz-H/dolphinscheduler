@@ -41,7 +41,7 @@ public enum Priority {
         this.code = code;
         this.descp = descp;
     }
-    //映射数据库中的字段
+
     @EnumValue
     private final int code;
     private final String descp;

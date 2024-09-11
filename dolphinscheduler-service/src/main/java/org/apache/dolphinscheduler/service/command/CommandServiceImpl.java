@@ -102,7 +102,6 @@ public class CommandServiceImpl implements CommandService {
             commandParams.put(Constants.SCHEDULE_TIMEZONE, schedule.getTimezoneId());
             command.setCommandParam(JSONUtils.toJsonString(commandParams));
         }
-        //使用自增ID
         command.setId(null);
         result = commandMapper.insert(command);
         return result;

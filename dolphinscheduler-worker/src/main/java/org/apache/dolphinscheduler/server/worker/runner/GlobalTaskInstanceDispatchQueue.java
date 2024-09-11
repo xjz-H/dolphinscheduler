@@ -41,7 +41,7 @@ public class GlobalTaskInstanceDispatchQueue {
         this.workerConfig = workerConfig;
         this.blockingQueue = new ArrayBlockingQueue<>(workerConfig.getExecThreads());
     }
-    //分配的任务存入到队列中
+
     public boolean addDispatchTask(TaskExecutionContext taskExecutionContext) {
         if (workerConfig.getTaskExecuteThreadsFullPolicy() == TaskExecuteThreadsFullPolicy.CONTINUE) {
             return blockingQueue.offer(taskExecutionContext);

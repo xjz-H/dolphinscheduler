@@ -612,7 +612,6 @@ public class ProcessServiceImpl implements ProcessService {
         processInstance.setIsSubProcess(Flag.NO);
         processInstance.setTaskDependType(command.getTaskDependType());
         processInstance.setFailureStrategy(command.getFailureStrategy());
-        //这个执行器ID是什么ID。是指定这个command 由哪台机器来执行吗？
         processInstance.setExecutorId(command.getExecutorId());
         processInstance.setExecutorName(Optional.ofNullable(userMapper.selectById(command.getExecutorId()))
                 .map(User::getUserName).orElse(null));
@@ -1190,8 +1189,8 @@ public class ProcessServiceImpl implements ProcessService {
                 taskInstance.getName(),
                 taskInstance.getProcessInstanceId(),
                 processInstance.getState());
-        // submit to db   这个时候才实例化任务到db中
-        if (!taskInstanceDao.submitTaskInstanceToDB(taskInstance, processInstance)) {
+        // submit to db
+        if (!taskInstanceDao.submitTaskInstanceToDB(taskInstance, processInstance)) {//任务实例保存到db中
             log.error("Save taskInstance to db error, task name:{}, process id:{} state: {} ",
                     taskInstance.getName(),
                     taskInstance.getProcessInstance().getId(),
@@ -1364,7 +1363,6 @@ public class ProcessServiceImpl implements ProcessService {
     public void packageTaskInstance(TaskInstance taskInstance, ProcessInstance processInstance) {
         taskInstance.setProcessInstance(processInstance);
         taskInstance.setProcessDefine(processInstance.getProcessDefinition());
-        //工作流实例的优先级赋值给任务实例
         taskInstance.setProcessInstancePriority(processInstance.getProcessInstancePriority());
         TaskDefinition taskDefinition = taskDefinitionDao.findTaskDefinition(
                 taskInstance.getTaskCode(),

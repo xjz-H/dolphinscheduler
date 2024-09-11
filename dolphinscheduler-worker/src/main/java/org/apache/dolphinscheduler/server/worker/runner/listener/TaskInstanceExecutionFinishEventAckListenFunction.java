@@ -43,6 +43,7 @@ public class TaskInstanceExecutionFinishEventAckListenFunction
             LogUtils.setTaskInstanceIdMDC(taskInstanceId);
             log.info("Receive TaskInstanceExecutionFinishEventAck: {}", taskInstanceExecutionFinishEventAck);
             if (taskInstanceExecutionFinishEventAck.isSuccess()) {
+                //worker 收到确认消息就会把消息从内存中删除掉
                 messageRetryRunner.removeRetryMessage(taskInstanceId,
                         ITaskInstanceExecutionEvent.TaskInstanceExecutionEventType.FINISH);
             } else {

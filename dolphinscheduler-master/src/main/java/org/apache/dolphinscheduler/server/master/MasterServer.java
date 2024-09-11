@@ -95,6 +95,7 @@ public class MasterServer implements IStoppable {
         this.taskPluginManager.loadPlugin();
 
         // self tolerant 向这zk注册监听器进行容错。
+        //这里容错是向zk 注册响应的节点remove 事件来进行容错
         this.masterRegistryClient.start();
         this.masterRegistryClient.setRegistryStoppable(this);
         // 扫描command命令的后线程，启用调度线程确保只有一个线程来启动调度器
@@ -102,6 +103,10 @@ public class MasterServer implements IStoppable {
         this.masterSchedulerBootstrap.start();
 
         this.eventExecuteService.start();
+        //master的容错。master 会使用一个守护线程主动拉取zk各个节点的注册信息，扫描数据库中的实例。如果发现有master机器宕机。就会将这个master
+        //管理的所有的工作流实例的host设置成null。 重新生成对应的command 。command的类型为工作流实例需要容错。
+        //用于master 自己和其他master 的容错。用于master自己只有在master宕机后又重新启动的时候会奏效。会查询出属于自己的processInstance实例然后将实例的host更改为null，
+        // 然后重新生成实例对应的command 持久化到db中。
         this.failoverExecuteThread.start();
 
         this.schedulerApi.start();

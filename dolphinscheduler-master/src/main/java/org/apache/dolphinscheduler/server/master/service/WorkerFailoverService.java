@@ -121,6 +121,7 @@ public class WorkerFailoverService {
         for (TaskInstance taskInstance : needFailoverTaskInstanceList) {
             try {
                 LogUtils.setWorkflowAndTaskInstanceIDMDC(taskInstance.getProcessInstanceId(), taskInstance.getId());
+                //获取该master 负责的worker 宕机的工作流实例来进行容错。
                 ProcessInstance processInstance = processInstanceCacheMap.computeIfAbsent(
                         taskInstance.getProcessInstanceId(), k -> {
                             WorkflowExecuteRunnable workflowExecuteRunnable = cacheManager.getByProcessInstanceId(
@@ -175,6 +176,7 @@ public class WorkerFailoverService {
         //更新自己的任务状态为需要容错。
         taskInstance.setState(TaskExecutionStatus.NEED_FAULT_TOLERANCE);
         taskInstance.setFlag(Flag.NO);
+        //更新任务实例的状态为容错
         taskInstanceDao.upsertTaskInstance(taskInstance);
 
         TaskStateEvent stateEvent = TaskStateEvent.builder()
@@ -235,6 +237,7 @@ public class WorkerFailoverService {
     //master  会派发自己管辖的任务实例到不动的worker。此处过滤出的宕机的worker 所执行的所有任务实例。
     private List<TaskInstance> getNeedFailoverTaskInstance(@NonNull String failoverWorkerHost) {
         // we query the task instance from cache, so that we can directly update the cache
+        //中间状态的任务才需要进行容错。
         return cacheManager.getAll()
                 .stream()
                 .flatMap(workflowExecuteRunnable -> workflowExecuteRunnable.getAllTaskInstances().stream())

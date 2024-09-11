@@ -84,7 +84,7 @@ public final class ProcessUtils {
     private static final Pattern LINUXPATTERN = Pattern.compile("\\((\\d+)\\)");
 
     /**
-     * kill tasks according to different task types.
+     * kill tasks according to different task types.  杀死所有正在执行的任务
      */
     @Deprecated
     public static boolean kill(@NonNull TaskExecutionContext request) {

@@ -70,6 +70,19 @@ public class MasterFailoverService {
     /**
      * check master failover
      */
+    /***
+     * @Counted  和 @Timed 注解用于监控和指标收集
+     *  @Counted
+     *  功能：此注解用于计数方法的调用次数。每当被注解的方法被调用时，计数器的值就会增加。
+     * 参数：value：这是指标的名称。在例子中，"ds.master.scheduler.failover.check.count" 是该计数器的名称。你可以在监控工具（如 Prometheus、Grafana 等）中使用这个名称来查询该计数器的值。
+     * 用途：常用于跟踪特定操作的频率，比如 API 调用、任务执行等。可以帮助开发者了解系统的使用情况和负载。
+     *
+     * @Timed
+     * 功能：此注解用于记录方法的执行时间。每当被注解的方法被调用时，它会测量执行所需的时间，并将该时间记录到一个指标中。
+     *
+     * 参数：value：也是指标的名称。在例子中，"ds.master.scheduler.failover.check.time" 是该计时器的名称。
+     * 用途：通常用于性能监测，帮助开发者理解方法的响应时间，识别性能瓶颈和优化机会。
+     */
     @Counted(value = "ds.master.scheduler.failover.check.count")
     @Timed(value = "ds.master.scheduler.failover.check.time", percentiles = {0.5, 0.75, 0.95, 0.99}, histogram = true)
     public void checkMasterFailover() {

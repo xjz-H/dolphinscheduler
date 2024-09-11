@@ -782,7 +782,8 @@ public class ProcessServiceImpl implements ProcessService {
         }
 
         int processInstanceId = command.getProcessInstanceId();
-        // 如果该命令已经实例化了,创建新的实例
+        // command 的processInstanceId 工作流实例的ID为0代表这个command 命令没有进行工作流实例化。
+        // master 容错的时候容错的工作流实例生成的command 的工作流实例ID为0
         if (processInstanceId == 0) {
             // 根据工作流定义和命令创建一个新的工作流实例
             processInstance = generateNewProcessInstance(processDefinition, command, cmdParam);
@@ -884,7 +885,7 @@ public class ProcessServiceImpl implements ProcessService {
                 processInstance.setRunTimes(runTime + 1);
                 break;
             case RECOVER_TOLERANCE_FAULT_PROCESS:
-                // recover tolerance fault process。容错恢复的实例
+                // recover tolerance fault process。容错恢复的实例。需要容错的工作流实例的设置成是恢复的工作流实例标志。
                 processInstance.setRecovery(Flag.YES);
                 processInstance.setRunTimes(runTime + 1);
                 runStatus = processInstance.getState();

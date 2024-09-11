@@ -1349,8 +1349,10 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
         Set<Long> submitTaskNodeList =
                 DagHelper.parsePostNodes(parentNodeCode, skipTaskNodeMap, dag, getCompleteTaskInstanceMap());
         List<TaskInstance> taskInstances = new ArrayList<>();
+        //遍历直接后继结点
         for (Long taskNode : submitTaskNodeList) {
             TaskNode taskNodeObject = dag.getNode(taskNode);
+            //根据任务定义的taskCode来获取任务实例
             Optional<TaskInstance> existTaskInstanceOptional = getTaskInstance(taskNodeObject.getCode());
             if (existTaskInstanceOptional.isPresent()) {
                 TaskInstance existTaskInstance = existTaskInstanceOptional.get();
@@ -1377,10 +1379,11 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 }
                 taskInstances.add(existTaskInstance);
             } else {
+                //创建任务实例
                 taskInstances.add(createTaskInstance(workflowInstance, taskNodeObject));
             }
         }
-        // the end node of the branch of the dag
+        // the end node of the branch of the dag 如果当前是dag的最后一个节点。
         if (parentNodeCode != null && dag.getEndNode().contains(parentNodeCode)) {
             Optional<TaskInstance> existTaskInstanceOptional = getTaskInstance(parentNodeCode);
             if (existTaskInstanceOptional.isPresent()) {
@@ -1439,7 +1442,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
                 log.info("Task is be stopped, the state is {}, taskInstanceId: {}", task.getState(), task.getId());
                 continue;
             }
-
+            //将切分出来的工作流实例添加到优先级队列中
             addTaskToStandByList(task);
         }
         submitStandByTask();
@@ -1961,6 +1964,7 @@ public class WorkflowExecuteRunnable implements IWorkflowExecuteRunnable {
     public void submitStandByTask() throws StateEventHandleException {
         ProcessInstance workflowInstance = workflowExecuteContext.getWorkflowInstance();
         TaskInstance task;
+        //从优先级队列中消费DAG切分创建出来的任务实例
         while ((task = readyToSubmitTaskQueue.peek()) != null) {
             // stop tasks which is retrying if forced success happens
             if (task.getId() != null && task.taskCanRetry()) {

@@ -97,6 +97,7 @@ public class WorkflowExecuteThreadPool extends ThreadPoolTaskExecutor {
                     stateEvent);
             return;
         }
+        //给工作流执行的线程添加容错的事件
         workflowExecuteThread.addStateEvent(stateEvent);
         log.info("Submit state event success, stateEvent: {}", stateEvent);
     }

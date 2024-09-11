@@ -23,7 +23,7 @@ import java.util.Map;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 
 public enum TaskExecutionStatus {
-
+    //第一次根据工作流实例DAG切分出来的任务实例的状态是SUBMITTED_SUCCESS
     SUBMITTED_SUCCESS(0, "submit success"),
     RUNNING_EXECUTION(1, "running"),
     PAUSE(3, "pause"),
@@ -111,6 +111,8 @@ public enum TaskExecutionStatus {
     }
 
     public boolean shouldFailover() {
+        //SUBMITTED_SUCCESS 状态表示封装了taskInstance的task执行的runnable并添加到队列中后的状态。
+        //DISPATCH 状态是将任务分配到worker 后的状态
         return SUBMITTED_SUCCESS == this
                 || DISPATCH == this
                 || RUNNING_EXECUTION == this
